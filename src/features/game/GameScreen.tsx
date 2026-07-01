@@ -12,7 +12,6 @@ import { minDartsToCheckout } from '@/domain/rules/checkout';
 import { StatsScreen } from '@/features/stats/StatsScreen';
 import { Header } from './Header';
 import { ScoreBoard } from './ScoreBoard';
-import { FinishControls } from './FinishControls';
 import { Keypad } from './Keypad';
 import { LegEndModal } from './LegEndModal';
 import { VisitHistory } from './VisitHistory';
@@ -217,28 +216,25 @@ export function GameScreen() {
             error={error}
             onCommit={commitRemaining}
           />
-          {onFinish && (
-            <FinishControls
-              minDarts={finishMinDarts}
-              onFinishWith={finishWith}
-              onMiss={onMiss}
-            />
-          )}
           <div className="min-h-0 flex-1 overflow-y-auto border-t border-[var(--color-border)]">
             <VisitHistory onEdit={(id) => setEditingId(id)} />
           </div>
         </div>
 
-        {/* keypad */}
+        {/* keypad — finish long-press is integrated into the 1/2/3 keys */}
         <div className="shrink-0 border-t border-[var(--color-border)] lg:flex lg:w-[440px] lg:flex-col lg:justify-center lg:border-l lg:border-t-0">
           <Keypad
             buffer={buffer}
             remainingBefore={remainingBefore}
+            onFinish={onFinish}
+            finishMinDarts={finishMinDarts}
             onDigit={onDigit}
             onBackspace={onBackspace}
             onCommit={commitSmart}
             onQuickScore={commitGross}
             onBust={onBust}
+            onMiss={onMiss}
+            onFinishWith={finishWith}
           />
         </div>
       </div>

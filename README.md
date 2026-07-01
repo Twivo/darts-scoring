@@ -1,77 +1,68 @@
-# 🎯 DartsScore — Scoring Fléchettes (501 / 601 Double Out)
+# 🎯 DartsScore — Darts competition platform (501 / 601 Double Out)
 
-Application web de scoring de fléchettes, tactile-first, pensée pour la
-compétition. Moteur **déterministe basé sur un event log** : tout l'état
-(score restant, moyennes, statistiques, manches) est **recalculé** depuis
-l'historique des événements. Rien d'autre n'est stocké.
+Touch-first darts scoring app that grew from a local scorer into a small
+competition platform: an event-sourced scoring engine, an admin area to manage
+players, multi-season persistent statistics, and matches auto-saved to the
+cloud so no game is ever lost.
+
+Every stat (remaining score, averages, legs, checkouts…) is **recomputed** from
+the event log by a pure engine — nothing derived is ever stored.
 
 ## Stack
 
-React 18 · TypeScript strict · Vite 6 · TailwindCSS 4 · React Router 6 ·
-LocalStorage (zéro backend) · Vitest.
+React 18 · TypeScript (strict) · Vite 6 · TailwindCSS 4 · React Router 6 ·
+Supabase (Postgres + Auth + RLS) · Vitest.
 
-## Démarrer
+- **Local-only mode**: with no backend configured, the app runs entirely on
+  LocalStorage (offline).
+- **Cloud mode**: set the two `VITE_SUPABASE_*` env vars and it uses Supabase
+  for players, seasons, matches and stats.
+
+## Getting started
 
 ```bash
 npm install
-npm run dev      # serveur de dev (http://localhost:5173)
-npm run build    # build de production (tsc + vite)
-npm test         # tests unitaires du moteur
+npm run dev      # dev server (http://localhost:5173)
+npm run build    # production build (tsc + vite)
+npm test         # unit tests (engine, rules, stats)
 ```
 
-> Node.js (LTS) est requis. Il a été installé via winget dans ce projet.
-> Un nouveau terminal voit `node`/`npm` automatiquement (ajouté au PATH
-> utilisateur). Pour l'aperçu intégré, `scripts/dev.cmd` injecte le PATH.
+### Cloud backend (optional)
+
+1. Create a Supabase project and run the SQL in
+   [`supabase/migrations/`](supabase/migrations) (see
+   [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)).
+2. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY` (the anon key is public by design — Row-Level
+   Security protects all writes).
 
 ## Architecture
 
-Règle de dépendance stricte : `domain` ← `store` ← `features`. Le domaine
-ne connaît ni React ni le stockage.
-
 ```
 src/
-├── domain/              ⚙️ Cœur pur, testable, sans React
-│   ├── types.ts         Types persistés (config, events) + dérivés (state, stats)
-│   ├── events.ts        Constructeurs d'événements
-│   ├── engine.ts        buildGameState(config, events) → GameState  ← fonction reine
-│   ├── stats.ts         Statistiques dérivées
-│   ├── presentation.ts  Helpers d'affichage (noms)
-│   ├── rules/
-│   │   ├── bust.ts      Bust & checkout (Double Out)
-│   │   └── turnOrder.ts Ordre de jeu, starter, alternance
-│   └── __tests__/       Tests du moteur (Vitest)
-│
-├── store/               🗄️ State management
-│   ├── reducer.ts       Manipule UNIQUEMENT { config, events }
-│   ├── GameContext.tsx  Provider : reducer + engine (mémo) + auto-save
-│   ├── RosterContext.tsx CRUD joueurs persisté
-│   └── persistence.ts   LocalStorage (versionné, anti-corruption)
-│
-├── features/            🎨 UI par domaine
-│   ├── home/            Accueil + détection de reprise
-│   ├── players/         CRUD + réorganisation des joueurs
-│   ├── setup/           Création de partie (type, mode, équipes, starter)
-│   ├── game/            Écran de jeu (header, scoreboard, keypad, historique…)
-│   └── stats/           Écran de fin + confettis
-│
-└── components/ui/       Boutons, Modal, Confirm (promesse)
+├── domain/     Pure engine, rules, stats (no React, no I/O) + tests
+├── data/       Repository + Auth interfaces, Supabase & Local implementations
+├── store/      React state (game, roster, auth) + resilient match persistence
+├── features/   UI by area: home · setup · game · admin (players, dashboard)
+└── components/ Shared UI
+supabase/migrations/   Versioned SQL (schema, RLS, seasons)
 ```
 
-## Principes clés
+- **Event-sourced**: a match persists only `{ config, events }`; the engine
+  rebuilds everything. Season stats reuse the same engine — zero duplication.
+- **Swappable backend**: features depend on `DartsRepository` / `AuthProvider`
+  interfaces, never a concrete backend.
+- **Security**: public read; player/season writes require the admin account;
+  matches can be scored anonymously but only the admin can delete them (RLS).
 
-- **Source de vérité unique** — seuls `{ config, events }` sont persistés.
-  `GameState` (score, moyennes, stats, manches, joueur actif) est **toujours
-  recalculé** par `buildGameState`.
-- **Édition robuste** — l'appartenance d'une visite (quel joueur/équipe) est
-  **re-dérivée par position** dans l'ordre de jeu, pas lue depuis l'événement.
-  Supprimer/éditer une visite au milieu décale automatiquement tous les tours.
-- **Persistance totale** — sauvegarde après chaque action ; reprise au refresh.
+## Deployment (GitHub Pages)
 
-## Fonctionnalités
+`.github/workflows/deploy.yml` builds and deploys on every push to `main`.
+For cloud mode, add two repository secrets
+(**Settings → Secrets and variables → Actions**):
 
-501/601 Double Out · Simple (1v1) & Double (2v2) · choix du starter
-(bull/manuel) + alternance · saisie tactile + scores rapides · **BUST** ·
-**mode finish rapide** (saisie du reste) · **checkout** avec nombre de
-fléchettes · historique **éditable/supprimable** (recalcul immédiat) · undo ·
-abandon manche/partie · stats complètes (moy 3D, first 9, checkout %, 180/140+,
-busts, meilleure/pire manche, moyenne par manche) · confettis.
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Routing uses `HashRouter`, so it works under any Pages path with no server
+rewrites.

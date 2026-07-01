@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/cn';
-import { createId } from '@/lib/id';
-import { saveGame } from '@/store/persistence';
+import { createId, createUuid } from '@/lib/id';
+import { getRepository } from '@/data';
+import { persistMatch } from '@/store/matchService';
 import { useRoster } from '@/store/RosterContext';
+import type { MatchRecord } from '@/data/types';
 import type {
   GameConfig,
   GameMode,
@@ -47,7 +49,8 @@ function Choice({
 
 export function SetupScreen() {
   const navigate = useNavigate();
-  const { players } = useRoster();
+  // Only active players can be picked for a match.
+  const { activePlayers: players } = useRoster();
 
   const [variant, setVariant] = useState<GameVariant>(501);
   const [mode, setMode] = useState<GameMode>('SINGLE');
@@ -88,9 +91,12 @@ export function SetupScreen() {
     return null;
   }, [players.length, perSide, valid, mode]);
 
+  const [starting, setStarting] = useState(false);
+
   /** Build the game with a known starting side and launch it. */
-  const startWithStarter = (starterSide: Side) => {
-    if (!valid) return;
+  const startWithStarter = async (starterSide: Side) => {
+    if (!valid || starting) return;
+    setStarting(true);
 
     const buildParticipant = (side: Side, members: typeof teamA): Participant => ({
       id: createId('part'),
@@ -112,15 +118,35 @@ export function SetupScreen() {
       mode,
       legsToWin,
       participants,
-      players: [...teamA, ...teamB],
+      players: [...teamA, ...teamB].map((p) => ({
+        id: p.id,
+        name: p.name,
+        color: p.color ?? undefined,
+      })),
       startingPolicy: policy,
       // Starter always alternates each leg.
       alternateStarter: true,
       firstStarterId,
     };
 
-    saveGame(config, []);
-    navigate('/game');
+    // Attach the match to the current season, then create + auto-save it.
+    const season = await getRepository()
+      .getCurrentSeason()
+      .catch(() => null);
+
+    const matchId = createUuid();
+    const record: MatchRecord = {
+      id: matchId,
+      seasonId: season?.id ?? 'local-2026-2027',
+      config,
+      events: [],
+      mode,
+      variant,
+      status: 'IN_PROGRESS',
+      winnerParticipant: null,
+    };
+    await persistMatch(record);
+    navigate(`/game/${matchId}`);
   };
 
   const onStartClick = () => {
@@ -222,7 +248,7 @@ export function SetupScreen() {
                     <span className="flex items-center gap-3 text-lg">
                       <span
                         className="h-3 w-3 rounded-full"
-                        style={{ background: p.color }}
+                        style={{ background: p.color ?? '#666' }}
                       />
                       {p.name}
                     </span>

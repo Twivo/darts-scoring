@@ -1,57 +1,50 @@
 import { cn } from '@/lib/cn';
+import { useLongPress } from '@/hooks/useLongPress';
 
 const QUICK_LEFT = [26, 41, 45, 59];
 const QUICK_RIGHT = [60, 81, 99, 100];
 const QUICK_BOTTOM = [140, 180];
+// 1 at the top, 9 at the bottom.
+const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 /**
- * Numeric keypad. The buffer is interpreted as the SCORE thrown:
- *  - ✓ / VALIDATE / quick scores deduct it from the remaining.
- * (Tapping the central remaining score instead treats the buffer as the
- *  remaining — see ScoreBoard / GameScreen.)
+ * Numeric keypad. Buffer = the SCORE thrown (✓ / VALIDATE / quick scores
+ * deduct it). When the player is on a finish, the 1/2/3 keys turn green and a
+ * LONG PRESS on them closes the leg with that many darts (short tap still types
+ * the digit).
  */
 export function Keypad({
   buffer,
   remainingBefore,
+  onFinish,
+  finishMinDarts,
   onDigit,
   onBackspace,
   onCommit,
   onQuickScore,
   onBust,
+  onMiss,
+  onFinishWith,
   disabled,
 }: {
   buffer: string;
   remainingBefore: number;
+  onFinish: boolean;
+  finishMinDarts: number;
   onDigit: (d: string) => void;
   onBackspace: () => void;
   onCommit: () => void;
   onQuickScore: (gross: number) => void;
   onBust: () => void;
+  onMiss: () => void;
+  onFinishWith: (darts: number) => void;
   disabled?: boolean;
 }) {
   const hasInput = buffer !== '';
   const canBust = remainingBefore <= 180;
 
-  const Key = ({
-    label,
-    onClick,
-    className,
-  }: {
-    label: React.ReactNode;
-    onClick: () => void;
-    className?: string;
-  }) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        'flex items-center justify-center rounded-xl bg-[var(--color-surface-2)] text-2xl font-bold transition-all active:scale-95 active:bg-[var(--color-surface-3)] disabled:opacity-40',
-        className,
-      )}
-    >
-      {label}
-    </button>
-  );
+  const isFinishKey = (d: string) =>
+    onFinish && (d === '1' || d === '2' || d === '3') && Number(d) >= finishMinDarts;
 
   const Quick = ({ value }: { value: number }) => (
     <button
@@ -65,16 +58,16 @@ export function Keypad({
 
   return (
     <div className="select-none px-2 pb-2 pt-2">
-      {/* keypad input preview */}
+      {/* keypad input preview / finish hint */}
       <div className="mb-1.5 flex h-9 items-center justify-center rounded-lg bg-[var(--color-surface)] px-3">
         {hasInput ? (
-          <span className="text-2xl font-black tnum tracking-wider">
-            {buffer}
+          <span className="text-2xl font-black tnum tracking-wider">{buffer}</span>
+        ) : onFinish ? (
+          <span className="text-sm font-semibold text-[var(--color-success)]">
+            Finish — hold 1 / 2 / 3 for the darts used
           </span>
         ) : (
-          <span className="text-sm text-[var(--color-text-mute)]">
-            Type a score
-          </span>
+          <span className="text-sm text-[var(--color-text-mute)]">Type a score</span>
         )}
       </div>
 
@@ -88,23 +81,36 @@ export function Keypad({
 
         {/* numpad */}
         <div className="grid flex-1 grid-cols-3 gap-1.5">
-          {['7', '8', '9', '4', '5', '6', '1', '2', '3'].map((d) => (
-            <Key
-              key={d}
-              label={d}
-              onClick={() => onDigit(d)}
-              className="h-12 sm:h-14"
-            />
-          ))}
-          <Key label="0" onClick={() => onDigit('0')} className="h-12 sm:h-14" />
-          <Key
+          {DIGITS.map((d) =>
+            isFinishKey(d) ? (
+              <FinishKey
+                key={d}
+                digit={d}
+                disabled={disabled}
+                onDigit={onDigit}
+                onFinishWith={onFinishWith}
+              />
+            ) : (
+              <PlainKey
+                key={d}
+                label={d}
+                onClick={() => onDigit(d)}
+                disabled={disabled}
+                className="h-12 sm:h-14"
+              />
+            ),
+          )}
+          <PlainKey label="0" onClick={() => onDigit('0')} disabled={disabled} className="h-12 sm:h-14" />
+          <PlainKey
             label="⌫"
             onClick={onBackspace}
+            disabled={disabled}
             className="h-12 text-[var(--color-text-dim)] sm:h-14"
           />
-          <Key
+          <PlainKey
             label="✓"
             onClick={onCommit}
+            disabled={disabled}
             className="h-12 bg-[var(--color-accent)] text-white active:bg-[var(--color-accent-hover)] sm:h-14"
           />
         </div>
@@ -117,18 +123,28 @@ export function Keypad({
         </div>
       </div>
 
-      {/* bottom row: quick big scores + BUST */}
+      {/* bottom row */}
       <div className="mt-1.5 flex gap-1.5">
-        {QUICK_BOTTOM.map((v) => (
+        {onFinish ? (
           <button
-            key={v}
-            onClick={() => onQuickScore(v)}
+            onClick={onMiss}
             disabled={disabled}
-            className="flex-1 rounded-xl bg-[var(--color-surface-2)] py-2.5 text-xl font-black transition-all active:scale-95 disabled:opacity-40"
+            className="flex-1 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-2)] py-2.5 text-xl font-black transition-all active:scale-95 disabled:opacity-40"
           >
-            {v}
+            Miss
           </button>
-        ))}
+        ) : (
+          QUICK_BOTTOM.map((v) => (
+            <button
+              key={v}
+              onClick={() => onQuickScore(v)}
+              disabled={disabled}
+              className="flex-1 rounded-xl bg-[var(--color-surface-2)] py-2.5 text-xl font-black transition-all active:scale-95 disabled:opacity-40"
+            >
+              {v}
+            </button>
+          ))
+        )}
         {canBust && (
           <button
             onClick={onBust}
@@ -149,5 +165,61 @@ export function Keypad({
         VALIDATE
       </button>
     </div>
+  );
+}
+
+function PlainKey({
+  label,
+  onClick,
+  disabled,
+  className,
+}: {
+  label: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'flex items-center justify-center rounded-xl bg-[var(--color-surface-2)] text-2xl font-bold transition-all active:scale-95 active:bg-[var(--color-surface-3)] disabled:opacity-40',
+        className,
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** A finish-capable digit key: tap types the digit, long-press closes the leg. */
+function FinishKey({
+  digit,
+  disabled,
+  onDigit,
+  onFinishWith,
+}: {
+  digit: string;
+  disabled?: boolean;
+  onDigit: (d: string) => void;
+  onFinishWith: (darts: number) => void;
+}) {
+  const handlers = useLongPress(() => onFinishWith(Number(digit)), {
+    ms: 420,
+    onClick: () => onDigit(digit),
+    disabled,
+  });
+  return (
+    <button
+      {...handlers}
+      disabled={disabled}
+      className="relative flex h-12 items-center justify-center rounded-xl bg-[var(--color-success)] text-2xl font-black text-white transition-all active:scale-95 disabled:opacity-40 sm:h-14"
+    >
+      {digit}
+      <span className="absolute bottom-0.5 text-[8px] font-semibold uppercase opacity-80">
+        hold
+      </span>
+    </button>
   );
 }

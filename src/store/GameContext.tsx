@@ -1,7 +1,7 @@
 /**
  * Game store provider. Holds { config, events } in a reducer, derives the
- * full GameState via the engine (memoized), and auto-saves to LocalStorage
- * after every change.
+ * full GameState via the engine (memoized), and auto-saves the match after
+ * every change (local cache + cloud, transparently).
  */
 import {
   createContext,
@@ -9,7 +9,6 @@ import {
   useEffect,
   useMemo,
   useReducer,
-  useRef,
   type ReactNode,
 } from 'react';
 import { buildGameState } from '@/domain/engine';
@@ -20,7 +19,8 @@ import {
   makeVisit,
 } from '@/domain/events';
 import type { GameConfig, GameEvent, GameState } from '@/domain/types';
-import { clearGame, saveGame } from './persistence';
+import type { MatchRecord } from '@/data/types';
+import { forgetCachedMatch, persistMatch } from './matchService';
 import { gameReducer, type GameStore } from './reducer';
 
 interface GameContextValue {
@@ -42,11 +42,15 @@ interface GameContextValue {
 const GameContext = createContext<GameContextValue | null>(null);
 
 export function GameProvider({
+  matchId,
+  seasonId,
   config,
   initialEvents,
   onEnd,
   children,
 }: {
+  matchId: string;
+  seasonId: string;
   config: GameConfig;
   initialEvents: GameEvent[];
   onEnd?: () => void;
@@ -63,14 +67,22 @@ export function GameProvider({
     [store.config, store.events],
   );
 
-  // Auto-save after every change to the source of truth.
-  const firstRun = useRef(true);
+  // Transparent auto-save after every change to the source of truth.
   useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false;
-    }
-    saveGame(store.config, store.events);
-  }, [store.config, store.events]);
+    const record: MatchRecord = {
+      id: matchId,
+      seasonId,
+      config: store.config,
+      events: store.events,
+      mode: store.config.mode,
+      variant: store.config.variant,
+      status: state.status === 'GAME_OVER' ? 'GAME_OVER' : 'IN_PROGRESS',
+      winnerParticipant: state.winnerId ?? null,
+      finishedAt:
+        state.status === 'GAME_OVER' ? new Date().toISOString() : null,
+    };
+    void persistMatch(record);
+  }, [matchId, seasonId, store.config, store.events, state.status, state.winnerId]);
 
   const value = useMemo<GameContextValue>(() => {
     const append = (event: GameEvent) =>
@@ -111,11 +123,11 @@ export function GameProvider({
       deleteEvent: (eventId) =>
         dispatch({ type: 'DELETE_EVENT', eventId }),
       endGame: () => {
-        clearGame();
+        forgetCachedMatch(matchId);
         onEnd?.();
       },
     };
-  }, [store.config, store.events, state, onEnd]);
+  }, [store.config, store.events, state, onEnd, matchId]);
 
   return (
     <GameContext.Provider value={value}>{children}</GameContext.Provider>

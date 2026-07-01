@@ -1,4 +1,4 @@
-/** Roster store: CRUD over players, persisted to LocalStorage. */
+/** Players roster, backed by the repository (Supabase or local fallback). */
 import {
   createContext,
   useCallback,
@@ -8,22 +8,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { createId } from '@/lib/id';
-import type { Player } from '@/domain/types';
-import { loadRoster, saveRoster } from './persistence';
-
-interface RosterContextValue {
-  players: Player[];
-  addPlayer: (name: string) => Player;
-  updatePlayer: (id: string, patch: Partial<Omit<Player, 'id'>>) => void;
-  removePlayer: (id: string) => void;
-  reorder: (from: number, to: number) => void;
-}
-
-const RosterContext = createContext<RosterContextValue | null>(null);
+import { getRepository } from '@/data';
+import type { PlayerInput } from '@/data/repository';
+import type { PlayerRecord } from '@/data/types';
 
 const PALETTE = [
-  '#e10600',
+  '#ef2b2d',
   '#2563eb',
   '#16a34a',
   '#f59e0b',
@@ -31,51 +21,91 @@ const PALETTE = [
   '#0891b2',
 ];
 
+interface RosterContextValue {
+  players: PlayerRecord[];
+  /** Active players only — used to build matches. */
+  activePlayers: PlayerRecord[];
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
+  addPlayer: (name: string, color?: string) => Promise<void>;
+  updatePlayer: (id: string, patch: Partial<PlayerInput>) => Promise<void>;
+  setActive: (id: string, active: boolean) => Promise<void>;
+  removePlayer: (id: string) => Promise<void>;
+}
+
+const RosterContext = createContext<RosterContextValue | null>(null);
+
 export function RosterProvider({ children }: { children: ReactNode }) {
-  const [players, setPlayers] = useState<Player[]>(() => loadRoster());
+  const repo = useMemo(() => getRepository(), []);
+  const [players, setPlayers] = useState<PlayerRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setPlayers(await repo.listPlayers({ sortBy: 'name' }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load players');
+    } finally {
+      setLoading(false);
+    }
+  }, [repo]);
 
   useEffect(() => {
-    saveRoster(players);
-  }, [players]);
+    void reload();
+  }, [reload]);
 
-  const addPlayer = useCallback((name: string): Player => {
-    const player: Player = {
-      id: createId('p'),
-      name: name.trim(),
-      color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-    };
-    setPlayers((prev) => [...prev, player]);
-    return player;
-  }, []);
-
-  const updatePlayer = useCallback(
-    (id: string, patch: Partial<Omit<Player, 'id'>>) => {
-      setPlayers((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-      );
+  const addPlayer = useCallback(
+    async (name: string, color?: string) => {
+      await repo.createPlayer({
+        name: name.trim(),
+        color: color ?? PALETTE[Math.floor(Math.random() * PALETTE.length)],
+      });
+      await reload();
     },
-    [],
+    [repo, reload],
   );
 
-  const removePlayer = useCallback((id: string) => {
-    setPlayers((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const updatePlayer = useCallback(
+    async (id: string, patch: Partial<PlayerInput>) => {
+      await repo.updatePlayer(id, patch);
+      await reload();
+    },
+    [repo, reload],
+  );
 
-  const reorder = useCallback((from: number, to: number) => {
-    setPlayers((prev) => {
-      if (from === to || from < 0 || to < 0) return prev;
-      if (from >= prev.length || to >= prev.length) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      if (!moved) return prev;
-      next.splice(to, 0, moved);
-      return next;
-    });
-  }, []);
+  const setActive = useCallback(
+    async (id: string, active: boolean) => {
+      await repo.updatePlayer(id, { active });
+      await reload();
+    },
+    [repo, reload],
+  );
+
+  const removePlayer = useCallback(
+    async (id: string) => {
+      await repo.deletePlayer(id);
+      await reload();
+    },
+    [repo, reload],
+  );
 
   const value = useMemo<RosterContextValue>(
-    () => ({ players, addPlayer, updatePlayer, removePlayer, reorder }),
-    [players, addPlayer, updatePlayer, removePlayer, reorder],
+    () => ({
+      players,
+      activePlayers: players.filter((p) => p.active),
+      loading,
+      error,
+      reload,
+      addPlayer,
+      updatePlayer,
+      setActive,
+      removePlayer,
+    }),
+    [players, loading, error, reload, addPlayer, updatePlayer, setActive, removePlayer],
   );
 
   return (
