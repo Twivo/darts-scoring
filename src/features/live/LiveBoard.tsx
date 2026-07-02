@@ -66,6 +66,22 @@ export function LiveBoard({
         </span>
       </div>
 
+      {p0 && p1 && (
+        <div className="flex items-center justify-center gap-3 sm:gap-4">
+          <span className="min-w-0 flex-1 truncate text-right text-sm font-semibold text-[var(--color-text-dim)]">
+            {participantLabel(config, p0.id)}
+          </span>
+          <span className="shrink-0 text-3xl font-black tnum sm:text-4xl">
+            {state.legsWon[p0.id] ?? 0}
+            <span className="mx-2 text-[var(--color-text-mute)]">–</span>
+            {state.legsWon[p1.id] ?? 0}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-[var(--color-text-dim)]">
+            {participantLabel(config, p1.id)}
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {parts.map((p) => {
           const isActive = !over && p.id === state.activeParticipantId;
