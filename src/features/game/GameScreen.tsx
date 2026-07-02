@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/store/GameContext';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
@@ -9,6 +9,7 @@ import {
   visitErrorMessage,
 } from '@/domain/rules/validation';
 import { minDartsToCheckout } from '@/domain/rules/checkout';
+import { cn } from '@/lib/cn';
 import { StatsScreen } from '@/features/stats/StatsScreen';
 import { Header } from './Header';
 import { ScoreBoard } from './ScoreBoard';
@@ -17,7 +18,18 @@ import { LegEndModal } from './LegEndModal';
 import { VisitHistory } from './VisitHistory';
 import { EditVisitModal } from './EditVisitModal';
 
-export function GameScreen() {
+export function GameScreen({
+  onGameOver,
+  gameOverContent,
+  embedded,
+}: {
+  /** Championship: called once the match is finished (winner participant id). */
+  onGameOver?: (winnerParticipantId: string | undefined) => void;
+  /** Championship: replaces the default end screen (StatsScreen). */
+  gameOverContent?: React.ReactNode;
+  /** Fill the parent instead of the whole viewport (embedded in a wrapper). */
+  embedded?: boolean;
+} = {}) {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const { config, state, addVisit, addBust, undo, forfeitLeg, forfeitGame } =
@@ -26,8 +38,17 @@ export function GameScreen() {
   const [buffer, setBuffer] = useState('');
   const [pendingCheckout, setPendingCheckout] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const firedGameOver = useRef(false);
+
+  useEffect(() => {
+    if (state.status === 'GAME_OVER' && onGameOver && !firedGameOver.current) {
+      firedGameOver.current = true;
+      onGameOver(state.winnerId);
+    }
+  }, [state.status, state.winnerId, onGameOver]);
 
   if (state.status === 'GAME_OVER') {
+    if (onGameOver || gameOverContent) return <>{gameOverContent}</>;
     return <StatsScreen />;
   }
 
@@ -174,7 +195,14 @@ export function GameScreen() {
   };
 
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-6xl flex-col bg-[var(--color-bg)]">
+    <div
+      className={cn(
+        'flex flex-col bg-[var(--color-bg)]',
+        embedded
+          ? 'h-full min-h-0 flex-1'
+          : 'mx-auto h-[100dvh] max-w-6xl',
+      )}
+    >
       {/* top control bar (compact single line) */}
       <div className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-0.5 text-xs">
         <button

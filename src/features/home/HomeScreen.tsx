@@ -3,18 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { buildGameState } from '@/domain/engine';
 import { listResumable } from '@/store/matchService';
+import { listResumableEncounters } from '@/store/encounterService';
 import { participantLabel } from '@/domain/presentation';
-import type { MatchRecord } from '@/data/types';
+import type { EncounterRecord, MatchRecord } from '@/data/types';
 
 export function HomeScreen() {
   const navigate = useNavigate();
   const [resumable, setResumable] = useState<MatchRecord[]>([]);
+  const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    listResumable()
-      .then((m) => alive && setResumable(m))
+    Promise.all([listResumable(), listResumableEncounters()])
+      .then(([m, e]) => {
+        if (!alive) return;
+        setResumable(m);
+        setEncounters(e);
+      })
       .finally(() => alive && setLoaded(true));
     return () => {
       alive = false;
@@ -41,6 +47,35 @@ export function HomeScreen() {
           Match scoring — 501 / 601 Double Out
         </p>
       </div>
+
+      {encounters.length > 0 && (
+        <div className="w-full rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-5 shadow-[0_8px_40px_-12px_var(--color-accent)]">
+          <p className="mb-3 text-lg font-bold">🏆 Championship in progress</p>
+          <div className="flex flex-col gap-2">
+            {encounters.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => navigate(`/championship/${e.id}`)}
+                className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-left transition-colors hover:border-[var(--color-accent)]"
+              >
+                <span>
+                  <span className="block font-semibold">
+                    {e.plan.teams.A.name} vs {e.plan.teams.B.name}
+                  </span>
+                  <span className="text-xs text-[var(--color-text-dim)]">
+                    {e.scoreA} – {e.scoreB} · match{' '}
+                    {Math.min(e.currentIndex + 1, e.plan.fixtures.length)}/
+                    {e.plan.fixtures.length}
+                  </span>
+                </span>
+                <span className="text-sm font-bold text-[var(--color-accent)]">
+                  Resume →
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {resumable.length > 0 && (
         <div className="w-full rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-5 shadow-[0_8px_40px_-12px_var(--color-accent)]">
@@ -82,6 +117,15 @@ export function HomeScreen() {
         onClick={() => navigate('/new')}
       >
         New game
+      </Button>
+
+      <Button
+        variant="surface"
+        size="xl"
+        fullWidth
+        onClick={() => navigate('/championship/new')}
+      >
+        🏆 Championship match
       </Button>
 
       <Button

@@ -1,0 +1,123 @@
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import {
+  advanceEncounter,
+  loadEncounter,
+  recordFixtureResult,
+} from '@/store/encounterService';
+import { buildEncounterState } from '@/domain/championship/encounter';
+import type { EncounterRecord } from '@/data/types';
+import type { Side } from '@/domain/championship/types';
+import { EncounterHeader } from './EncounterHeader';
+import { EncounterConfig } from './EncounterConfig';
+import { FixtureComposer } from './FixtureComposer';
+import { EncounterPlay } from './EncounterPlay';
+import { MatchStatsScreen } from './MatchStatsScreen';
+import { EncounterFinal } from './EncounterFinal';
+
+/** Orchestrates one encounter: compose → play → per-match stats → next → final. */
+export function ChampionshipRoute() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [encounter, setEncounter] = useState<EncounterRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [configOpen, setConfigOpen] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    loadEncounter(id)
+      .then((e) => alive && setEncounter(e))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-[var(--color-text-dim)]">
+        Loading encounter…
+      </div>
+    );
+  }
+  if (!encounter) return <Navigate to="/" replace />;
+
+  const state = buildEncounterState(encounter.plan, encounter.currentIndex);
+  const isPlay = state.phase === 'PLAY';
+
+  return (
+    <div className="mx-auto flex h-[100dvh] max-w-6xl flex-col bg-[var(--color-bg)]">
+      {!isPlay && (
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-sm">
+          <button
+            onClick={() => navigate('/')}
+            className="rounded-md px-2 py-1 text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
+          >
+            ← Home
+          </button>
+          <span className="font-semibold">Championship</span>
+          <span className="w-14" />
+        </div>
+      )}
+
+      <EncounterHeader
+        encounter={encounter}
+        state={state}
+        onConfigure={() => setConfigOpen(true)}
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        {state.phase === 'COMPOSE' && state.composeBlock && (
+          <FixtureComposer
+            encounter={encounter}
+            block={state.composeBlock}
+            onComposed={setEncounter}
+          />
+        )}
+
+        {state.phase === 'PLAY' && state.currentFixture && (
+          <EncounterPlay
+            encounter={encounter}
+            fixture={state.currentFixture}
+            onEncounterUpdate={setEncounter}
+            onResult={(winner: Side) =>
+              void recordFixtureResult(
+                encounter,
+                state.currentIndex,
+                winner,
+              ).then(setEncounter)
+            }
+          />
+        )}
+
+        {state.phase === 'MATCH_DONE' && state.currentFixture && (
+          <MatchStatsScreen
+            encounter={encounter}
+            fixture={state.currentFixture}
+            isLast={state.currentIndex + 1 >= state.total}
+            onNext={() => void advanceEncounter(encounter).then(setEncounter)}
+          />
+        )}
+
+        {state.phase === 'FINAL' && (
+          <EncounterFinal
+            encounter={encounter}
+            onFinish={() => navigate('/', { replace: true })}
+          />
+        )}
+      </div>
+
+      {configOpen && (
+        <EncounterConfig
+          encounter={encounter}
+          onClose={() => setConfigOpen(false)}
+          onUpdated={setEncounter}
+        />
+      )}
+    </div>
+  );
+}

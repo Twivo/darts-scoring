@@ -54,5 +54,9 @@ export function removeCachedMatch(id: string): void {
 export function listCachedInProgress(): MatchRecord[] {
   return readIndex()
     .map((id) => getCachedMatch(id))
-    .filter((m): m is MatchRecord => !!m && m.status === 'IN_PROGRESS');
+    .filter(
+      (m): m is MatchRecord =>
+        // regular matches only — championship matches resume via the encounter
+        !!m && m.status === 'IN_PROGRESS' && !m.encounterId,
+    );
 }

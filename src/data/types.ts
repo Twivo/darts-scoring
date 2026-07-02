@@ -4,6 +4,7 @@
  * still persists exactly { config, events } and the engine recomputes the rest.
  */
 import type { GameConfig, GameEvent } from '@/domain/types';
+import type { EncounterPlan, Side } from '@/domain/championship/types';
 
 export interface Season {
   id: string;
@@ -32,6 +33,9 @@ export interface MatchRecord {
   variant: GameConfig['variant'];
   status: MatchStatus;
   winnerParticipant?: string | null;
+  /** Championship link (null for regular matches). */
+  encounterId?: string | null;
+  fixtureIndex?: number | null;
   createdAt?: string;
   updatedAt?: string;
   finishedAt?: string | null;
@@ -54,4 +58,36 @@ export interface MatchQuery {
   /** ISO date range on created_at. */
   from?: string;
   to?: string;
+  /** Regular matches only (encounter_id IS NULL) unless overridden. */
+  encounterId?: string | null;
+}
+
+// --- championship ----------------------------------------------------------
+
+export interface TeamRecord {
+  id: string;
+  name: string;
+  createdAt?: string;
+}
+
+export interface TeamWithPlayers extends TeamRecord {
+  playerIds: string[];
+}
+
+export type EncounterStatus = 'IN_PROGRESS' | 'FINISHED' | 'ABANDONED';
+
+export interface EncounterRecord {
+  id: string;
+  seasonId: string;
+  teamAId: string;
+  teamBId: string;
+  plan: EncounterPlan;
+  status: EncounterStatus;
+  currentIndex: number;
+  scoreA: number;
+  scoreB: number;
+  winner: Side | null;
+  createdAt?: string;
+  updatedAt?: string;
+  finishedAt?: string | null;
 }

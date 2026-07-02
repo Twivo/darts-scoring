@@ -5,15 +5,21 @@
 import { createId } from '@/lib/id';
 import type { DartsRepository, PlayerInput } from '../repository';
 import type {
+  EncounterRecord,
   MatchQuery,
   MatchRecord,
   PlayerQuery,
   PlayerRecord,
   Season,
+  TeamRecord,
+  TeamWithPlayers,
 } from '../types';
 
 const PLAYERS_KEY = 'darts:players:v2';
 const MATCHES_KEY = 'darts:matches:v2';
+const TEAMS_KEY = 'darts:teams:v1';
+const TEAM_PLAYERS_KEY = 'darts:team-players:v1';
+const ENCOUNTERS_KEY = 'darts:encounters:v1';
 
 const LOCAL_SEASON: Season = {
   id: 'local-2026-2027',
@@ -94,6 +100,9 @@ export class LocalRepository implements DartsRepository {
 
   async listMatches(query: MatchQuery = {}): Promise<MatchRecord[]> {
     let matches = read<MatchRecord[]>(MATCHES_KEY, []);
+    matches = query.encounterId
+      ? matches.filter((m) => m.encounterId === query.encounterId)
+      : matches.filter((m) => !m.encounterId);
     if (query.mode) matches = matches.filter((m) => m.mode === query.mode);
     if (query.status) matches = matches.filter((m) => m.status === query.status);
     if (query.playerId)
@@ -121,6 +130,96 @@ export class LocalRepository implements DartsRepository {
   async listInProgress(): Promise<MatchRecord[]> {
     return (await this.listMatches({ status: 'IN_PROGRESS' })).sort((a, b) =>
       (a.updatedAt ?? '') < (b.updatedAt ?? '') ? 1 : -1,
+    );
+  }
+
+  // --- teams ---------------------------------------------------------------
+
+  async listTeams(search?: string): Promise<TeamWithPlayers[]> {
+    const teams = read<TeamRecord[]>(TEAMS_KEY, []);
+    const links = read<{ teamId: string; playerId: string }[]>(
+      TEAM_PLAYERS_KEY,
+      [],
+    );
+    const s = search?.trim().toLowerCase();
+    return teams
+      .filter((t) => !s || t.name.toLowerCase().includes(s))
+      .map((t) => ({
+        ...t,
+        playerIds: links.filter((l) => l.teamId === t.id).map((l) => l.playerId),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async createTeam(name: string): Promise<TeamRecord> {
+    const teams = read<TeamRecord[]>(TEAMS_KEY, []);
+    const team: TeamRecord = {
+      id: createId('team'),
+      name: name.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    write(TEAMS_KEY, [...teams, team]);
+    return team;
+  }
+
+  async updateTeam(id: string, patch: { name: string }): Promise<TeamRecord> {
+    const teams = read<TeamRecord[]>(TEAMS_KEY, []).map((t) =>
+      t.id === id ? { ...t, ...patch } : t,
+    );
+    write(TEAMS_KEY, teams);
+    return teams.find((t) => t.id === id)!;
+  }
+
+  async deleteTeam(id: string): Promise<void> {
+    write(
+      TEAMS_KEY,
+      read<TeamRecord[]>(TEAMS_KEY, []).filter((t) => t.id !== id),
+    );
+    write(
+      TEAM_PLAYERS_KEY,
+      read<{ teamId: string; playerId: string }[]>(TEAM_PLAYERS_KEY, []).filter(
+        (l) => l.teamId !== id,
+      ),
+    );
+  }
+
+  async setTeamPlayers(teamId: string, playerIds: string[]): Promise<void> {
+    const others = read<{ teamId: string; playerId: string }[]>(
+      TEAM_PLAYERS_KEY,
+      [],
+    ).filter((l) => l.teamId !== teamId);
+    write(TEAM_PLAYERS_KEY, [
+      ...others,
+      ...playerIds.map((playerId) => ({ teamId, playerId })),
+    ]);
+  }
+
+  // --- encounters ----------------------------------------------------------
+
+  async getEncounter(id: string): Promise<EncounterRecord | null> {
+    return (
+      read<EncounterRecord[]>(ENCOUNTERS_KEY, []).find((e) => e.id === id) ?? null
+    );
+  }
+
+  async saveEncounter(record: EncounterRecord): Promise<void> {
+    const list = read<EncounterRecord[]>(ENCOUNTERS_KEY, []);
+    const idx = list.findIndex((e) => e.id === record.id);
+    const stamped = { ...record, updatedAt: new Date().toISOString() };
+    if (idx >= 0) list[idx] = stamped;
+    else list.push({ ...stamped, createdAt: new Date().toISOString() });
+    write(ENCOUNTERS_KEY, list);
+  }
+
+  async listEncounters(seasonId?: string): Promise<EncounterRecord[]> {
+    return read<EncounterRecord[]>(ENCOUNTERS_KEY, [])
+      .filter((e) => !seasonId || e.seasonId === seasonId)
+      .sort((a, b) => ((a.createdAt ?? '') < (b.createdAt ?? '') ? 1 : -1));
+  }
+
+  async listEncountersInProgress(): Promise<EncounterRecord[]> {
+    return (await this.listEncounters()).filter(
+      (e) => e.status === 'IN_PROGRESS',
     );
   }
 }

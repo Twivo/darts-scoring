@@ -9,7 +9,9 @@ import { RequireAuth } from './RequireAuth';
  */
 const NAV = [
   { to: '/admin/players', label: 'Players' },
+  { to: '/admin/teams', label: 'Teams' },
   { to: '/admin/stats', label: 'Statistics' },
+  { to: '/admin/championship', label: 'Championship' },
 ];
 
 export function AdminLayout() {

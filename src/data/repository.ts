@@ -4,11 +4,14 @@
  * Supabase (cloud) without touching feature code, and add new backends later.
  */
 import type {
+  EncounterRecord,
   MatchQuery,
   MatchRecord,
   PlayerQuery,
   PlayerRecord,
   Season,
+  TeamRecord,
+  TeamWithPlayers,
 } from './types';
 
 export interface PlayerInput {
@@ -35,6 +38,20 @@ export interface DartsRepository {
   saveMatch(record: MatchRecord): Promise<void>;
   /** Matches still in progress (for the resume prompt). */
   listInProgress(): Promise<MatchRecord[]>;
+
+  // teams (championship) --------------------------------------------------
+  listTeams(search?: string): Promise<TeamWithPlayers[]>;
+  createTeam(name: string): Promise<TeamRecord>;
+  updateTeam(id: string, patch: { name: string }): Promise<TeamRecord>;
+  deleteTeam(id: string): Promise<void>;
+  /** Replace a team's player membership. */
+  setTeamPlayers(teamId: string, playerIds: string[]): Promise<void>;
+
+  // encounters (championship) --------------------------------------------
+  getEncounter(id: string): Promise<EncounterRecord | null>;
+  saveEncounter(record: EncounterRecord): Promise<void>;
+  listEncounters(seasonId?: string): Promise<EncounterRecord[]>;
+  listEncountersInProgress(): Promise<EncounterRecord[]>;
 }
 
 // --- Authentication --------------------------------------------------------

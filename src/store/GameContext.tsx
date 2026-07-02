@@ -46,6 +46,8 @@ export function GameProvider({
   seasonId,
   config,
   initialEvents,
+  encounterId,
+  fixtureIndex,
   onEnd,
   children,
 }: {
@@ -53,6 +55,9 @@ export function GameProvider({
   seasonId: string;
   config: GameConfig;
   initialEvents: GameEvent[];
+  /** Championship link, preserved on every auto-save. */
+  encounterId?: string | null;
+  fixtureIndex?: number | null;
   onEnd?: () => void;
   children: ReactNode;
 }) {
@@ -78,11 +83,22 @@ export function GameProvider({
       variant: store.config.variant,
       status: state.status === 'GAME_OVER' ? 'GAME_OVER' : 'IN_PROGRESS',
       winnerParticipant: state.winnerId ?? null,
+      encounterId: encounterId ?? null,
+      fixtureIndex: fixtureIndex ?? null,
       finishedAt:
         state.status === 'GAME_OVER' ? new Date().toISOString() : null,
     };
     void persistMatch(record);
-  }, [matchId, seasonId, store.config, store.events, state.status, state.winnerId]);
+  }, [
+    matchId,
+    seasonId,
+    store.config,
+    store.events,
+    state.status,
+    state.winnerId,
+    encounterId,
+    fixtureIndex,
+  ]);
 
   const value = useMemo<GameContextValue>(() => {
     const append = (event: GameEvent) =>

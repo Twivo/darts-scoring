@@ -2,11 +2,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DartsRepository, PlayerInput } from '../repository';
 import type {
+  EncounterRecord,
   MatchQuery,
   MatchRecord,
   PlayerQuery,
   PlayerRecord,
   Season,
+  TeamRecord,
+  TeamWithPlayers,
 } from '../types';
 
 interface DbPlayer {
@@ -32,6 +35,8 @@ interface DbMatch {
   variant: MatchRecord['variant'];
   status: MatchRecord['status'];
   winner_participant: string | null;
+  encounter_id: string | null;
+  fixture_index: number | null;
   created_at: string;
   updated_at: string;
   finished_at: string | null;
@@ -60,6 +65,8 @@ const toMatch = (r: DbMatch): MatchRecord => ({
   variant: r.variant,
   status: r.status,
   winnerParticipant: r.winner_participant,
+  encounterId: r.encounter_id,
+  fixtureIndex: r.fixture_index,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
   finishedAt: r.finished_at,
@@ -134,6 +141,10 @@ export class SupabaseRepository implements DartsRepository {
 
   async listMatches(query: MatchQuery = {}): Promise<MatchRecord[]> {
     let q = this.sb.from('matches').select('*');
+    // Regular matches only unless an encounter is explicitly requested, so
+    // championship matches never pollute the normal dashboard.
+    if (query.encounterId) q = q.eq('encounter_id', query.encounterId);
+    else q = q.is('encounter_id', null);
     if (query.seasonId) q = q.eq('season_id', query.seasonId);
     if (query.mode) q = q.eq('mode', query.mode);
     if (query.status) q = q.eq('status', query.status);
@@ -173,6 +184,8 @@ export class SupabaseRepository implements DartsRepository {
       variant: record.variant,
       status: record.status,
       winner_participant: record.winnerParticipant ?? null,
+      encounter_id: record.encounterId ?? null,
+      fixture_index: record.fixtureIndex ?? null,
       finished_at: record.finishedAt ?? null,
     });
     if (error) throw error;
@@ -197,8 +210,152 @@ export class SupabaseRepository implements DartsRepository {
       .from('matches')
       .select('*')
       .eq('status', 'IN_PROGRESS')
+      .is('encounter_id', null) // regular matches only
       .order('updated_at', { ascending: false });
     if (error) throw error;
     return (data as DbMatch[]).map(toMatch);
   }
+
+  // --- teams ---------------------------------------------------------------
+
+  async listTeams(search?: string): Promise<TeamWithPlayers[]> {
+    let q = this.sb
+      .from('teams')
+      .select('id, name, created_at, team_players(player_id)')
+      .order('name');
+    if (search) q = q.ilike('name', `%${search}%`);
+    const { data, error } = await q;
+    if (error) throw error;
+    return (data as Array<{
+      id: string;
+      name: string;
+      created_at: string;
+      team_players: { player_id: string }[];
+    }>).map((r) => ({
+      id: r.id,
+      name: r.name,
+      createdAt: r.created_at,
+      playerIds: r.team_players.map((tp) => tp.player_id),
+    }));
+  }
+
+  async createTeam(name: string): Promise<TeamRecord> {
+    const { data, error } = await this.sb
+      .from('teams')
+      .insert({ name })
+      .select('id, name, created_at')
+      .single();
+    if (error) throw error;
+    const r = data as { id: string; name: string; created_at: string };
+    return { id: r.id, name: r.name, createdAt: r.created_at };
+  }
+
+  async updateTeam(id: string, patch: { name: string }): Promise<TeamRecord> {
+    const { data, error } = await this.sb
+      .from('teams')
+      .update(patch)
+      .eq('id', id)
+      .select('id, name, created_at')
+      .single();
+    if (error) throw error;
+    const r = data as { id: string; name: string; created_at: string };
+    return { id: r.id, name: r.name, createdAt: r.created_at };
+  }
+
+  async deleteTeam(id: string): Promise<void> {
+    const { error } = await this.sb.from('teams').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async setTeamPlayers(teamId: string, playerIds: string[]): Promise<void> {
+    const del = await this.sb.from('team_players').delete().eq('team_id', teamId);
+    if (del.error) throw del.error;
+    if (playerIds.length) {
+      const ins = await this.sb
+        .from('team_players')
+        .insert(playerIds.map((pid) => ({ team_id: teamId, player_id: pid })));
+      if (ins.error) throw ins.error;
+    }
+  }
+
+  // --- encounters ----------------------------------------------------------
+
+  async getEncounter(id: string): Promise<EncounterRecord | null> {
+    const { data, error } = await this.sb
+      .from('encounters')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? toEncounter(data as DbEncounter) : null;
+  }
+
+  async saveEncounter(record: EncounterRecord): Promise<void> {
+    const { error } = await this.sb.from('encounters').upsert({
+      id: record.id,
+      season_id: record.seasonId,
+      team_a_id: record.teamAId,
+      team_b_id: record.teamBId,
+      plan: record.plan,
+      status: record.status,
+      current_index: record.currentIndex,
+      score_a: record.scoreA,
+      score_b: record.scoreB,
+      winner: record.winner,
+      finished_at: record.finishedAt ?? null,
+    });
+    if (error) throw error;
+  }
+
+  async listEncounters(seasonId?: string): Promise<EncounterRecord[]> {
+    let q = this.sb.from('encounters').select('*').order('created_at', {
+      ascending: false,
+    });
+    if (seasonId) q = q.eq('season_id', seasonId);
+    const { data, error } = await q;
+    if (error) throw error;
+    return (data as DbEncounter[]).map(toEncounter);
+  }
+
+  async listEncountersInProgress(): Promise<EncounterRecord[]> {
+    const { data, error } = await this.sb
+      .from('encounters')
+      .select('*')
+      .eq('status', 'IN_PROGRESS')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data as DbEncounter[]).map(toEncounter);
+  }
 }
+
+interface DbEncounter {
+  id: string;
+  season_id: string;
+  team_a_id: string;
+  team_b_id: string;
+  plan: EncounterRecord['plan'];
+  status: EncounterRecord['status'];
+  current_index: number;
+  score_a: number;
+  score_b: number;
+  winner: EncounterRecord['winner'];
+  created_at: string;
+  updated_at: string;
+  finished_at: string | null;
+}
+
+const toEncounter = (r: DbEncounter): EncounterRecord => ({
+  id: r.id,
+  seasonId: r.season_id,
+  teamAId: r.team_a_id,
+  teamBId: r.team_b_id,
+  plan: r.plan,
+  status: r.status,
+  currentIndex: r.current_index,
+  scoreA: r.score_a,
+  scoreB: r.score_b,
+  winner: r.winner,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  finishedAt: r.finished_at,
+});

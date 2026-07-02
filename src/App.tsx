@@ -4,7 +4,12 @@ import { SetupScreen } from './features/setup/SetupScreen';
 import { GameRoute } from './features/game/GameRoute';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminPlayers } from './features/admin/AdminPlayers';
+import { AdminTeams } from './features/admin/AdminTeams';
 import { AdminDashboard } from './features/admin/AdminDashboard';
+import { AdminChampionship } from './features/admin/AdminChampionship';
+import { RequireAuth } from './features/admin/RequireAuth';
+import { EncounterSetup } from './features/championship/EncounterSetup';
+import { ChampionshipRoute } from './features/championship/ChampionshipRoute';
 
 export function App() {
   return (
@@ -14,11 +19,31 @@ export function App() {
         <Route path="/new" element={<SetupScreen />} />
         <Route path="/game/:id" element={<GameRoute />} />
 
+        {/* Championship — gated by admin auth (scoring with login) */}
+        <Route
+          path="/championship/new"
+          element={
+            <RequireAuth>
+              <EncounterSetup />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/championship/:id"
+          element={
+            <RequireAuth>
+              <ChampionshipRoute />
+            </RequireAuth>
+          }
+        />
+
         {/* Admin — fully gated by RequireAuth inside AdminLayout */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/players" replace />} />
           <Route path="players" element={<AdminPlayers />} />
+          <Route path="teams" element={<AdminTeams />} />
           <Route path="stats" element={<AdminDashboard />} />
+          <Route path="championship" element={<AdminChampionship />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

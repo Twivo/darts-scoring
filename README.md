@@ -41,19 +41,24 @@ npm test         # unit tests (engine, rules, stats)
 ```
 src/
 ├── domain/     Pure engine, rules, stats (no React, no I/O) + tests
+├── domain/championship/  Team-encounter state machine (pure) + tests
 ├── data/       Repository + Auth interfaces, Supabase & Local implementations
-├── store/      React state (game, roster, auth) + resilient match persistence
-├── features/   UI by area: home · setup · game · admin (players, dashboard)
+├── store/      React state (game, roster, auth) + resilient match/encounter persistence
+├── features/   UI by area: home · setup · game · championship · admin
 └── components/ Shared UI
-supabase/migrations/   Versioned SQL (schema, RLS, seasons)
+supabase/migrations/   Versioned SQL (schema, RLS, seasons, teams, encounters)
 ```
 
 - **Event-sourced**: a match persists only `{ config, events }`; the engine
-  rebuilds everything. Season stats reuse the same engine — zero duplication.
+  rebuilds everything. Stats reuse the same engine — zero duplication.
 - **Swappable backend**: features depend on `DartsRepository` / `AuthProvider`
   interfaces, never a concrete backend.
-- **Security**: public read; player/season writes require the admin account;
-  matches can be scored anonymously but only the admin can delete them (RLS).
+- **Championship mode**: a team tie (4 singles, 2 doubles, 4 singles). Each
+  fixture is a normal match tagged with `encounter_id`, so it reuses the whole
+  engine yet keeps its stats separate. Login-gated, auto-saved, resumable.
+- **Security**: public read; player/season/team writes require the admin
+  account; regular matches can be scored anonymously but only the admin can
+  delete them; championship writes require login (RLS).
 
 ## Deployment (GitHub Pages)
 
