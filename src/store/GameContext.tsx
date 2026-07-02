@@ -1,7 +1,10 @@
 /**
  * Game store provider. Holds { config, events } in a reducer, derives the
- * full GameState via the engine (memoized), and auto-saves the match after
- * every change (local cache + cloud, transparently).
+ * full GameState via the engine (memoized), and auto-saves the match to the
+ * database after every change. The DB is the single source of truth — nothing
+ * is written locally. Saves keep the events in memory and retry until the DB
+ * accepts them, so a network drop never loses a visit; `saveStatus` surfaces
+ * that state to the UI.
  */
 import {
   createContext,
@@ -9,6 +12,8 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
+  useState,
   type ReactNode,
 } from 'react';
 import { buildGameState } from '@/domain/engine';
@@ -20,13 +25,18 @@ import {
 } from '@/domain/events';
 import type { GameConfig, GameEvent, GameState } from '@/domain/types';
 import type { MatchRecord } from '@/data/types';
-import { forgetCachedMatch, persistMatch } from './matchService';
+import { persistMatch } from './matchService';
 import { gameReducer, type GameStore } from './reducer';
+
+/** Persistence state of the live match, for a small header indicator. */
+export type SaveStatus = 'saved' | 'saving' | 'offline';
 
 interface GameContextValue {
   config: GameConfig;
   events: GameEvent[];
   state: GameState;
+  /** Whether the latest change has reached the database. */
+  saveStatus: SaveStatus;
   /** Add a normal scoring visit for the currently active thrower. */
   addVisit: (scored: number, darts?: number) => void;
   /** Add a bust for the currently active thrower. */
@@ -72,9 +82,15 @@ export function GameProvider({
     [store.config, store.events],
   );
 
-  // Transparent auto-save after every change to the source of truth.
+  // Auto-save to the DB after every change. The latest record to save is held
+  // in a ref (each save carries the full event log, so only the newest matters)
+  // and drained by a single long-lived loop that retries on failure.
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+  const pendingRef = useRef<MatchRecord | null>(null);
+  const wakeRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
-    const record: MatchRecord = {
+    pendingRef.current = {
       id: matchId,
       seasonId,
       config: store.config,
@@ -88,7 +104,7 @@ export function GameProvider({
       finishedAt:
         state.status === 'GAME_OVER' ? new Date().toISOString() : null,
     };
-    void persistMatch(record);
+    wakeRef.current?.(); // nudge the drain loop
   }, [
     matchId,
     seasonId,
@@ -100,6 +116,35 @@ export function GameProvider({
     fixtureIndex,
   ]);
 
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      while (alive) {
+        const record = pendingRef.current;
+        if (!record) {
+          await new Promise<void>((resolve) => {
+            wakeRef.current = resolve;
+          });
+          wakeRef.current = null;
+          continue;
+        }
+        setSaveStatus('saving');
+        try {
+          await persistMatch(record);
+          if (pendingRef.current === record) pendingRef.current = null;
+          if (alive && !pendingRef.current) setSaveStatus('saved');
+        } catch {
+          if (alive) setSaveStatus('offline');
+          await new Promise((r) => setTimeout(r, 2500)); // back off, then retry
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+      wakeRef.current?.(); // release the loop if it's waiting
+    };
+  }, []);
+
   const value = useMemo<GameContextValue>(() => {
     const append = (event: GameEvent) =>
       dispatch({ type: 'APPEND_EVENT', event });
@@ -108,6 +153,7 @@ export function GameProvider({
       config: store.config,
       events: store.events,
       state,
+      saveStatus,
       addVisit: (scored, darts) => {
         if (state.status !== 'IN_PROGRESS') return;
         append(
@@ -139,11 +185,10 @@ export function GameProvider({
       deleteEvent: (eventId) =>
         dispatch({ type: 'DELETE_EVENT', eventId }),
       endGame: () => {
-        forgetCachedMatch(matchId);
         onEnd?.();
       },
     };
-  }, [store.config, store.events, state, onEnd, matchId]);
+  }, [store.config, store.events, state, saveStatus, onEnd]);
 
   return (
     <GameContext.Provider value={value}>{children}</GameContext.Provider>

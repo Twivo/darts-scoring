@@ -1,9 +1,10 @@
 /**
  * Championship encounter persistence & orchestration helpers.
  *
- * Mirrors matchService: writes to a local cache synchronously then to the cloud
- * (best-effort), so an interrupted encounter is never lost and resumes exactly
- * where it stopped. Each fixture reuses the normal match engine.
+ * The database is the single source of truth — nothing is cached locally.
+ * Encounter saves happen at discrete transitions (compose / advance), so a
+ * failed write is retried a few times before surfacing. Each fixture reuses
+ * the normal match engine.
  */
 import { getRepository } from '@/data';
 import type { EncounterRecord } from '@/data/types';
@@ -26,65 +27,36 @@ import type {
 } from '@/domain/championship/types';
 import type { GameConfig } from '@/domain/types';
 
-const cacheKey = (id: string) => `darts:encounter:${id}`;
-const INDEX_KEY = 'darts:encounter-index';
-
-function cache(record: EncounterRecord): void {
-  try {
-    localStorage.setItem(cacheKey(record.id), JSON.stringify(record));
-    const idx = JSON.parse(
-      localStorage.getItem(INDEX_KEY) ?? '[]',
-    ) as string[];
-    localStorage.setItem(
-      INDEX_KEY,
-      JSON.stringify([...new Set([...idx, record.id])]),
-    );
-  } catch {
-    /* ignore */
-  }
-}
-function cached(id: string): EncounterRecord | null {
-  try {
-    const raw = localStorage.getItem(cacheKey(id));
-    return raw ? (JSON.parse(raw) as EncounterRecord) : null;
-  } catch {
-    return null;
-  }
-}
-
+/** Save to the DB, retrying a few times to ride out a brief network blip. */
 export async function persistEncounter(record: EncounterRecord): Promise<void> {
-  cache(record);
-  try {
-    await getRepository().saveEncounter(record);
-  } catch {
-    /* offline — kept in cache */
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      await getRepository().saveEncounter(record);
+      return;
+    } catch (err) {
+      lastError = err;
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+    }
   }
+  throw lastError;
 }
 
 export async function loadEncounter(
   id: string,
 ): Promise<EncounterRecord | null> {
-  let remote: EncounterRecord | null = null;
   try {
-    remote = await getRepository().getEncounter(id);
+    return await getRepository().getEncounter(id);
   } catch {
-    remote = null;
+    return null;
   }
-  return remote ?? cached(id);
 }
 
 export async function listResumableEncounters(): Promise<EncounterRecord[]> {
   try {
     return await getRepository().listEncountersInProgress();
   } catch {
-    const idx = JSON.parse(
-      localStorage.getItem(INDEX_KEY) ?? '[]',
-    ) as string[];
-    return idx
-      .map(cached)
-      .filter(
-        (e): e is EncounterRecord => !!e && e.status === 'IN_PROGRESS',
-      );
+    return [];
   }
 }
 

@@ -1,8 +1,9 @@
 import { useGame } from '@/store/GameContext';
 import { participantLabel, playerName } from '@/domain/presentation';
+import { cn } from '@/lib/cn';
 
 export function Header() {
-  const { config, state } = useGame();
+  const { config, state, saveStatus } = useGame();
   const { activeParticipantId, activePlayerId, legStarterId } = state;
 
   const isDouble = config.mode === 'DOUBLE';
@@ -31,6 +32,32 @@ export function Header() {
         )}
         <span className="text-[var(--color-text-dim)]">to throw</span>
       </div>
+
+      {saveStatus !== 'saved' && (
+        <span
+          className={cn(
+            'mr-2 inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold',
+            saveStatus === 'offline'
+              ? 'text-[var(--color-warning)]'
+              : 'text-[var(--color-text-dim)]',
+          )}
+          title={
+            saveStatus === 'offline'
+              ? 'Offline — the game is kept in memory and will save automatically once the connection is back'
+              : 'Saving to the database…'
+          }
+        >
+          <span
+            className={cn(
+              'h-1.5 w-1.5 rounded-full',
+              saveStatus === 'offline'
+                ? 'bg-[var(--color-warning)]'
+                : 'animate-pulse bg-[var(--color-accent)]',
+            )}
+          />
+          {saveStatus === 'offline' ? 'Offline — retrying' : 'Saving…'}
+        </span>
+      )}
 
       <div className="shrink-0 text-right text-[var(--color-text-dim)]">
         <span className="font-semibold text-[var(--color-accent)]">
