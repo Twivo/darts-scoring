@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getRepository } from '@/data';
 import { buildGameState } from '@/domain/engine';
-import { participantLabel } from '@/domain/presentation';
+import { participantDisplay } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
 import { MatchDetail } from './MatchDetail';
 import type { EncounterRecord, MatchRecord, Season } from '@/data/types';
@@ -175,7 +175,7 @@ function EncounterMatches({
             );
             const winnerLabel =
               state.status === 'GAME_OVER' && state.winnerId
-                ? participantLabel(m.config, state.winnerId)
+                ? participantDisplay(m.config, state.winnerId)
                 : null;
             const legs = m.config.participants
               .map((p) => state.legsWon[p.id] ?? 0)
@@ -193,7 +193,7 @@ function EncounterMatches({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">
                       {m.config.participants
-                        .map((p) => participantLabel(m.config, p.id))
+                        .map((p) => participantDisplay(m.config, p.id))
                         .join('  vs  ')}
                     </span>
                     <span className="text-xs text-[var(--color-text-dim)]">

@@ -46,24 +46,24 @@ export function EncounterConfig({
     );
   };
 
-  /** Swap the composition of two fixtures (used to reorder remaining matches). */
-  const swap = (a: number, b: number) => {
+  /**
+   * Reorder the PLAY sequence: move a not-yet-played fixture up or down by
+   * swapping it with the adjacent one. Any single or double can go anywhere —
+   * fully flexible order — while played / in-progress matches stay locked in
+   * place (a fixture keeps its identity, only its position in the array moves).
+   */
+  const move = (pos: number, dir: -1 | 1) => {
     setFixtures((prev) => {
-      const fa = prev.find((f) => f.index === a);
-      const fb = prev.find((f) => f.index === b);
-      if (!fa || !fb) return prev;
-      return prev.map((f) => {
-        if (f.index === a)
-          return { ...f, aPlayerIds: fb.aPlayerIds, bPlayerIds: fb.bPlayerIds };
-        if (f.index === b)
-          return { ...f, aPlayerIds: fa.aPlayerIds, bPlayerIds: fa.bPlayerIds };
-        return f;
-      });
+      const target = pos + dir;
+      const a = prev[pos];
+      const b = prev[target];
+      if (!a || !b || !editable(a) || !editable(b)) return prev;
+      const next = [...prev];
+      next[pos] = b;
+      next[target] = a;
+      return next;
     });
   };
-
-  const editableSameKind = (f: Fixture) =>
-    fixtures.filter((x) => editable(x) && x.kind === f.kind);
 
   const save = async () => {
     setBusy(true);
@@ -135,10 +135,12 @@ export function EncounterConfig({
 
         {/* fixtures */}
         <div className="flex flex-col gap-2">
-          {fixtures.map((f) => {
+          {fixtures.map((f, pos) => {
             const locked = !editable(f);
-            const group = editableSameKind(f);
-            const pos = group.findIndex((x) => x.index === f.index);
+            const prev = fixtures[pos - 1];
+            const nextF = fixtures[pos + 1];
+            const canUp = !locked && !!prev && editable(prev);
+            const canDown = !locked && !!nextF && editable(nextF);
             return (
               <div
                 key={f.index}
@@ -151,25 +153,19 @@ export function EncounterConfig({
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wide text-[var(--color-accent)]">
-                    {f.kind === 'DOUBLE' ? 'Double' : 'Single'} #{f.index + 1}
+                    Match {pos + 1} · {f.kind === 'DOUBLE' ? 'Double' : 'Single'}
                     {locked && (
                       <span className="ml-2 text-[var(--color-text-mute)]">
                         🔒 {f.winner ? 'played' : 'in progress'}
                       </span>
                     )}
                   </span>
-                  {!locked && group.length > 1 && (
+                  {!locked && (
                     <span className="flex gap-1">
-                      <MiniBtn
-                        disabled={pos <= 0}
-                        onClick={() => swap(f.index, group[pos - 1]!.index)}
-                      >
+                      <MiniBtn disabled={!canUp} onClick={() => move(pos, -1)}>
                         ▲
                       </MiniBtn>
-                      <MiniBtn
-                        disabled={pos >= group.length - 1}
-                        onClick={() => swap(f.index, group[pos + 1]!.index)}
-                      >
+                      <MiniBtn disabled={!canDown} onClick={() => move(pos, 1)}>
                         ▼
                       </MiniBtn>
                     </span>

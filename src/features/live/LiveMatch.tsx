@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getRepository } from '@/data';
 import { buildGameState } from '@/domain/engine';
 import { loadMatch } from '@/store/matchService';
 import { loadEncounter } from '@/store/encounterService';
 import { subscribeMatch } from '@/store/liveMatch';
-import type { MatchRecord } from '@/data/types';
+import type { EncounterRecord, MatchRecord } from '@/data/types';
 import { LiveBoard, type EncounterContext } from './LiveBoard';
+import { LiveEncounterRecap } from './LiveEncounterRecap';
 
 /** Read-only live view of one match. Never scores — pure spectating. */
 export function LiveMatch() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [match, setMatch] = useState<MatchRecord | null>(null);
-  const [encounter, setEncounter] = useState<EncounterContext | null>(null);
+  const [encounter, setEncounter] = useState<EncounterRecord | null>(null);
+  const [encMatches, setEncMatches] = useState<MatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Live updates: realtime push + a polling fallback, both just refetch.
+  // Current match: initial load + realtime push + polling fallback.
   useEffect(() => {
     if (!id) return;
     let alive = true;
@@ -33,34 +36,62 @@ export function LiveMatch() {
     };
   }, [id]);
 
-  // Championship context (team tie score + which fixture).
+  // Championship context: the encounter + every fixture's match (for the tie
+  // score, the recap table, and detecting the next live match).
+  const encounterId = match?.encounterId ?? null;
   useEffect(() => {
-    let alive = true;
-    if (match?.encounterId) {
-      void loadEncounter(match.encounterId).then((enc) => {
-        if (!alive || !enc) return;
-        const total = enc.plan.fixtures.length;
-        const n = (match.fixtureIndex ?? 0) + 1;
-        setEncounter({
-          aName: enc.plan.teams.A.name,
-          bName: enc.plan.teams.B.name,
-          scoreA: enc.scoreA,
-          scoreB: enc.scoreB,
-          label: `match ${n} of ${total} · ${match.mode === 'DOUBLE' ? 'doubles' : 'singles'}`,
-        });
-      });
-    } else {
+    if (!encounterId) {
       setEncounter(null);
+      setEncMatches([]);
+      return;
     }
+    let alive = true;
+    const repo = getRepository();
+    const refresh = async () => {
+      const [enc, ms] = await Promise.all([
+        loadEncounter(encounterId),
+        repo.listMatches({ encounterId }).catch(() => [] as MatchRecord[]),
+      ]);
+      if (!alive) return;
+      if (enc) setEncounter(enc);
+      setEncMatches(ms);
+    };
+    void refresh();
+    const poll = window.setInterval(() => void refresh(), 4000);
     return () => {
       alive = false;
+      window.clearInterval(poll);
     };
-  }, [match?.encounterId, match?.fixtureIndex, match?.mode]);
+  }, [encounterId]);
 
   const state = useMemo(
     () => (match ? buildGameState(match.config, match.events) : null),
     [match],
   );
+  const isOver = state?.status === 'GAME_OVER';
+  const encounterFinished = !!encounter && encounter.status === 'FINISHED';
+
+  // (#1) When the viewed match is over, jump straight to the next live fixture.
+  useEffect(() => {
+    if (!isOver || !match) return;
+    const next = encMatches.find(
+      (m) => m.id !== match.id && m.status === 'IN_PROGRESS',
+    );
+    if (next) navigate(`/live/${next.id}`, { replace: true });
+  }, [isOver, match, encMatches, navigate]);
+
+  const context: EncounterContext | null = useMemo(() => {
+    if (!encounter || !match) return null;
+    const total = encounter.plan.fixtures.length;
+    const n = (match.fixtureIndex ?? 0) + 1;
+    return {
+      aName: encounter.plan.teams.A.name,
+      bName: encounter.plan.teams.B.name,
+      scoreA: encounter.scoreA,
+      scoreB: encounter.scoreB,
+      label: `match ${n} of ${total} · ${match.mode === 'DOUBLE' ? 'doubles' : 'singles'}`,
+    };
+  }, [encounter, match]);
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-3 py-4">
@@ -80,8 +111,34 @@ export function LiveMatch() {
           This match is no longer available.
         </p>
       ) : (
-        <LiveBoard state={state} encounter={encounter} />
+        <>
+          <LiveBoard state={state} encounter={context} />
+
+          {isOver && encounter && (
+            <div
+              className={cnBanner(encounterFinished)}
+            >
+              {encounterFinished
+                ? '🏆 Championship finished — see the full recap below.'
+                : 'Match finished — waiting for the next match…'}
+            </div>
+          )}
+
+          {encounter && (
+            <LiveEncounterRecap
+              encounter={encounter}
+              matches={encMatches}
+              currentMatchId={match?.id}
+            />
+          )}
+        </>
       )}
     </div>
   );
+}
+
+function cnBanner(finished: boolean): string {
+  return finished
+    ? 'mt-4 rounded-xl border border-[var(--color-success)] bg-[var(--color-success-dim)] px-4 py-3 text-center text-sm font-semibold text-[var(--color-success)]'
+    : 'mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-center text-sm text-[var(--color-text-dim)]';
 }

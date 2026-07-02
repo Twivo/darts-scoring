@@ -141,9 +141,11 @@ export class SupabaseRepository implements DartsRepository {
 
   async listMatches(query: MatchQuery = {}): Promise<MatchRecord[]> {
     let q = this.sb.from('matches').select('*');
-    // Regular matches only unless an encounter is explicitly requested, so
-    // championship matches never pollute the normal dashboard.
+    // Training matches (New Game, encounter_id IS NULL) and championship
+    // matches are kept strictly apart: stats screens pass `championship` to
+    // aggregate only championship play, never training games.
     if (query.encounterId) q = q.eq('encounter_id', query.encounterId);
+    else if (query.championship) q = q.not('encounter_id', 'is', null);
     else q = q.is('encounter_id', null);
     if (query.seasonId) q = q.eq('season_id', query.seasonId);
     if (query.mode) q = q.eq('mode', query.mode);

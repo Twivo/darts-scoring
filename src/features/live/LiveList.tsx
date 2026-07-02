@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildGameState } from '@/domain/engine';
-import { participantLabel } from '@/domain/presentation';
+import { participantDisplay } from '@/domain/presentation';
 import { listLiveMatches } from '@/store/liveMatch';
 import type { MatchRecord } from '@/data/types';
 
@@ -48,7 +48,7 @@ export function LiveList() {
           {matches.map((m) => {
             const state = buildGameState(m.config, m.events);
             const sides = m.config.participants
-              .map((p) => participantLabel(m.config, p.id))
+              .map((p) => participantDisplay(m.config, p.id))
               .join('  vs  ');
             const legs = m.config.participants
               .map((p) => state.legsWon[p.id] ?? 0)

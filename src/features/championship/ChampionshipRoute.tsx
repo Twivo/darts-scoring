@@ -87,7 +87,9 @@ export function ChampionshipRoute() {
             onResult={(winner: Side) =>
               void recordFixtureResult(
                 encounter,
-                state.currentIndex,
+                // identity index of the fixture being played (not the play
+                // position — the order can be freely reordered)
+                state.currentFixture!.index,
                 winner,
               ).then(setEncounter)
             }

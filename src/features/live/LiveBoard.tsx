@@ -1,5 +1,5 @@
 import type { GameState, ResolvedVisit } from '@/domain/types';
-import { participantLabel, playerName } from '@/domain/presentation';
+import { participantDisplay, playerName } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
 
 export interface EncounterContext {
@@ -69,7 +69,7 @@ export function LiveBoard({
       {p0 && p1 && (
         <div className="flex items-center justify-center gap-3 sm:gap-4">
           <span className="min-w-0 flex-1 truncate text-right text-sm font-semibold text-[var(--color-text-dim)]">
-            {participantLabel(config, p0.id)}
+            {participantDisplay(config, p0.id)}
           </span>
           <span className="shrink-0 text-3xl font-black tnum sm:text-4xl">
             {state.legsWon[p0.id] ?? 0}
@@ -77,7 +77,7 @@ export function LiveBoard({
             {state.legsWon[p1.id] ?? 0}
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-[var(--color-text-dim)]">
-            {participantLabel(config, p1.id)}
+            {participantDisplay(config, p1.id)}
           </span>
         </div>
       )}
@@ -101,7 +101,7 @@ export function LiveBoard({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate font-semibold">
-                  {participantLabel(config, p.id)}
+                  {participantDisplay(config, p.id)}
                 </span>
                 {isActive && (
                   <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-accent)]">

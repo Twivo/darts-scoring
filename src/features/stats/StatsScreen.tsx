@@ -30,7 +30,7 @@ const ROWS: StatRow[] = [
 ];
 
 export function StatsScreen() {
-  const { config, state, endGame } = useGame();
+  const { config, state, endGame, undo } = useGame();
   const winnerLabel = state.winnerId
     ? participantLabel(config, state.winnerId)
     : '—';
@@ -133,6 +133,9 @@ export function StatsScreen() {
       </div>
 
       <div className="relative z-50 mt-8 flex flex-col gap-3">
+        <Button variant="surface" size="lg" fullWidth onClick={undo}>
+          ↩ Back — correct the score
+        </Button>
         <ShareButton payload={buildShare} />
         <Button variant="accent" size="xl" fullWidth onClick={endGame}>
           New game

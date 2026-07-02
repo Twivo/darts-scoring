@@ -28,3 +28,17 @@ export function participantPlayers(
   if (!p) return [];
   return p.playerIds.map((id) => playerName(config, id));
 }
+
+/**
+ * Who this participant actually is: the player in SINGLE, both players joined
+ * with "&" in DOUBLE. Prefer this over `participantLabel` (which is the team
+ * name for doubles) wherever the actual competitors must be shown.
+ */
+export function participantDisplay(
+  config: GameConfig,
+  participantId: string,
+): string {
+  const names = participantPlayers(config, participantId);
+  if (names.length === 0) return participantLabel(config, participantId);
+  return names.join(' & ');
+}

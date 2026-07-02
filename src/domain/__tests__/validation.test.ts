@@ -30,6 +30,16 @@ describe('validateVisitInput', () => {
     // 169 cannot be checked out
     expect(validateVisitInput(169, 169).code).toBe('INVALID_CHECKOUT');
   });
+
+  it('rejects scores impossible with three darts', () => {
+    for (const s of [172, 173, 175, 176, 178, 179]) {
+      expect(validateVisitInput(400, s).code).toBe('IMPOSSIBLE_SCORE');
+    }
+    // neighbours that ARE possible stay valid
+    expect(validateVisitInput(400, 174).ok).toBe(true);
+    expect(validateVisitInput(400, 177).ok).toBe(true);
+    expect(validateVisitInput(400, 180).ok).toBe(true);
+  });
 });
 
 describe('isOnFinish', () => {

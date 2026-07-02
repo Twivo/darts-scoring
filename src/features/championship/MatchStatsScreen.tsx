@@ -5,7 +5,7 @@ import {
   aggregatePlayerStats,
   type PlayerSeasonStats,
 } from '@/domain/playerStats';
-import { participantLabel } from '@/domain/presentation';
+import { participantDisplay } from '@/domain/presentation';
 import { loadMatch } from '@/store/matchService';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 import type { Fixture } from '@/domain/championship/types';
@@ -64,7 +64,7 @@ export function MatchStatsScreen({
   const nameOf = (id: string) =>
     match.config.players.find((p) => p.id === id)?.name ?? '???';
   const winnerLabel = fixture.winner
-    ? participantLabel(match.config, fixture.winner)
+    ? participantDisplay(match.config, fixture.winner)
     : '—';
   const legs = match.config.participants
     .map((p) => state.legsWon[p.id] ?? 0)
@@ -81,7 +81,7 @@ export function MatchStatsScreen({
         </h2>
         <div className="text-sm text-[var(--color-text-dim)]">
           {match.config.participants
-            .map((p) => participantLabel(match.config, p.id))
+            .map((p) => participantDisplay(match.config, p.id))
             .join('  vs  ')}{' '}
           · legs {legs}
         </div>

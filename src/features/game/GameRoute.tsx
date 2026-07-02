@@ -3,13 +3,16 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { GameProvider } from '@/store/GameContext';
 import { loadMatch } from '@/store/matchService';
 import { acquireLock, releaseLock, LOCK_HEARTBEAT_MS } from '@/store/matchLock';
+import { useAuth } from '@/store/AuthContext';
 import { Button } from '@/components/ui/Button';
+import { AdminLogin } from '@/features/admin/AdminLogin';
 import type { MatchRecord } from '@/data/types';
 import { GameScreen } from './GameScreen';
 
 export function GameRoute() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [match, setMatch] = useState<MatchRecord | null>(null);
   const [loading, setLoading] = useState(true);
   /** True when another device is actively scoring this match. */
@@ -29,10 +32,16 @@ export function GameRoute() {
     };
   }, [id]);
 
-  // Take control of the match, then hold it with a heartbeat. Another device
-  // can only watch (read-only) until we release it or the heartbeat goes stale.
+  // Resuming an already-started match is protected: taking control after a
+  // break requires the organizer password (admin sign-in). A brand-new game
+  // (no visits yet) is public, like normal scoring.
+  const isResume =
+    !!match && match.events.length > 0 && match.status === 'IN_PROGRESS';
+  const needsPassword = isResume && !user;
+
+  // Take control (heartbeat lock) once we're actually allowed to score.
   useEffect(() => {
-    if (!id || !match) return;
+    if (!id || !match || needsPassword) return;
     let alive = true;
     let beat: number | undefined;
     void acquireLock(id).then((r) => {
@@ -56,9 +65,9 @@ export function GameRoute() {
       if (beat) window.clearInterval(beat);
       void releaseLock(id);
     };
-  }, [id, match]);
+  }, [id, match, needsPassword]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-[var(--color-text-dim)]">
         Loading match…
@@ -66,6 +75,18 @@ export function GameRoute() {
     );
   }
   if (!id || !match) return <Navigate to="/" replace />;
+
+  if (needsPassword) {
+    return (
+      <div>
+        <div className="mx-auto max-w-sm px-6 pt-6 text-center text-sm text-[var(--color-text-dim)]">
+          🔒 Resuming a match in progress is protected. Sign in with the
+          organizer account to take control.
+        </div>
+        <AdminLogin />
+      </div>
+    );
+  }
 
   if (lockedOut) {
     return (

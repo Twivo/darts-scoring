@@ -11,9 +11,21 @@ import { minDartsToCheckout } from './checkout';
 
 export type VisitErrorCode =
   | 'SCORE_RANGE' // not an integer in 0..180
+  | 'IMPOSSIBLE_SCORE' // a total that cannot be thrown with three darts
   | 'OVER_REMAINING' // scored more than what's left
   | 'LEAVES_ONE' // would leave exactly 1 (impossible to finish)
   | 'INVALID_CHECKOUT'; // exact finish on a non-checkoutable number
+
+/**
+ * Totals that cannot be scored with three darts. (163/166/169 are also
+ * impossible but only ever come up as exact finishes, already rejected as
+ * INVALID_CHECKOUT with a clearer message.)
+ */
+const IMPOSSIBLE_3_DARTS = new Set([172, 173, 175, 176, 178, 179]);
+
+export function isImpossibleThreeDartScore(gross: number): boolean {
+  return IMPOSSIBLE_3_DARTS.has(gross);
+}
 
 export interface VisitValidation {
   ok: boolean;
@@ -28,6 +40,9 @@ export function validateVisitInput(
 ): VisitValidation {
   if (!Number.isInteger(gross) || gross < 0 || gross > MAX_VISIT_SCORE) {
     return { ok: false, code: 'SCORE_RANGE', isCheckout: false };
+  }
+  if (isImpossibleThreeDartScore(gross)) {
+    return { ok: false, code: 'IMPOSSIBLE_SCORE', isCheckout: false };
   }
   if (gross > remainingBefore) {
     return { ok: false, code: 'OVER_REMAINING', isCheckout: false };
@@ -50,6 +65,8 @@ export function visitErrorMessage(
   switch (code) {
     case 'SCORE_RANGE':
       return 'Score must be between 0 and 180.';
+    case 'IMPOSSIBLE_SCORE':
+      return 'Impossible score with three darts.';
     case 'OVER_REMAINING':
       return `Score is higher than what's left (${remainingBefore}).`;
     case 'LEAVES_ONE':

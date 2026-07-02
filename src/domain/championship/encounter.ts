@@ -53,8 +53,10 @@ function blockAt(blocks: ComposeBlock[], index: number): ComposeBlock | null {
 }
 
 export function isBlockComposed(plan: EncounterPlan, block: ComposeBlock): boolean {
+  // Filter by fixture identity (index), not array position: the play order can
+  // be freely reordered, so fixtures of a block may sit anywhere in the array.
   return plan.fixtures
-    .slice(block.start, block.end)
+    .filter((f) => f.index >= block.start && f.index < block.end)
     .every((f) => f.aPlayerIds.length > 0 && f.bPlayerIds.length > 0);
 }
 
@@ -85,8 +87,10 @@ export function buildEncounterState(
     };
   }
 
+  // Play in ARRAY order (the reorderable sequence); each fixture keeps its
+  // identity `index`, which is what maps to its composition block and match.
   const fixture = plan.fixtures[currentIndex]!;
-  const block = blockAt(blocks, currentIndex)!;
+  const block = blockAt(blocks, fixture.index)!;
   let phase: EncounterState['phase'];
   let composeBlock: ComposeBlock | null = null;
 

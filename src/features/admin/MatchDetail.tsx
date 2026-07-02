@@ -1,7 +1,7 @@
 import { Modal } from '@/components/ui/Modal';
 import { buildGameState } from '@/domain/engine';
 import { aggregatePlayerStats } from '@/domain/playerStats';
-import { participantLabel } from '@/domain/presentation';
+import { participantDisplay } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
 import type { MatchRecord } from '@/data/types';
 import type { LegState, ResolvedVisit } from '@/domain/types';
@@ -22,7 +22,7 @@ export function MatchDetail({
 
   const winner =
     state.status === 'GAME_OVER' && state.winnerId
-      ? participantLabel(config, state.winnerId)
+      ? participantDisplay(config, state.winnerId)
       : null;
 
   const STAT_ROWS: { label: string; get: (id: string) => string }[] = [
@@ -75,7 +75,7 @@ export function MatchDetail({
         {/* summary */}
         <div className="mb-4">
           <h2 className="text-xl font-black">
-            {parts.map((p) => participantLabel(config, p.id)).join('  vs  ')}
+            {parts.map((p) => participantDisplay(config, p.id)).join('  vs  ')}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--color-text-dim)]">
             {match.variant} {match.mode === 'DOUBLE' ? 'Doubles' : 'Singles'} ·{' '}
@@ -97,7 +97,7 @@ export function MatchDetail({
                 <th className="px-3 py-2 text-left font-semibold">Stat</th>
                 {parts.map((p) => (
                   <th key={p.id} className="px-3 py-2 text-right font-bold">
-                    {participantLabel(config, p.id)}
+                    {participantDisplay(config, p.id)}
                   </th>
                 ))}
               </tr>
@@ -147,7 +147,7 @@ function LegBreakdown({
   }));
   const rounds = Math.max(0, ...byPart.map((c) => c.visits.length));
   const winnerLabel = leg.winnerId
-    ? participantLabel(config, leg.winnerId)
+    ? participantDisplay(config, leg.winnerId)
     : null;
 
   return (
@@ -166,7 +166,7 @@ function LegBreakdown({
             key={c.id}
             className="px-1 pb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-dim)]"
           >
-            {participantLabel(config, c.id)}
+            {participantDisplay(config, c.id)}
           </div>
         ))}
         {Array.from({ length: rounds }, (_, r) =>

@@ -55,7 +55,10 @@ export function EncounterPlay({
     };
     const enc = { ...encounter, plan };
     await persistEncounter(enc);
-    const launched = await launchFixture(enc, plan.fixtures[fixture.index]!);
+    const launched = await launchFixture(
+      enc,
+      plan.fixtures.find((f) => f.index === fixture.index)!,
+    );
     onEncounterUpdate(launched.encounter);
     const m = await loadMatch(launched.matchId);
     setMatch(m);

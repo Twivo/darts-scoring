@@ -98,8 +98,11 @@ export function AdminDashboard() {
     if (!seasonId) return;
     let alive = true;
     setLoading(true);
+    // Championship matches only: New Game (training) never counts in stats,
+    // rankings or averages.
     const query: MatchQuery = {
       seasonId,
+      championship: true,
       ...(mode !== 'ALL' ? { mode } : {}),
       ...periodRange(period, from, to),
     };

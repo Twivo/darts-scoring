@@ -102,7 +102,9 @@ export class LocalRepository implements DartsRepository {
     let matches = read<MatchRecord[]>(MATCHES_KEY, []);
     matches = query.encounterId
       ? matches.filter((m) => m.encounterId === query.encounterId)
-      : matches.filter((m) => !m.encounterId);
+      : query.championship
+        ? matches.filter((m) => !!m.encounterId)
+        : matches.filter((m) => !m.encounterId);
     if (query.mode) matches = matches.filter((m) => m.mode === query.mode);
     if (query.status) matches = matches.filter((m) => m.status === query.status);
     if (query.playerId)

@@ -60,6 +60,8 @@ export interface MatchQuery {
   to?: string;
   /** Regular matches only (encounter_id IS NULL) unless overridden. */
   encounterId?: string | null;
+  /** All championship matches (encounter_id IS NOT NULL) — for stats screens. */
+  championship?: boolean;
 }
 
 // --- championship ----------------------------------------------------------
