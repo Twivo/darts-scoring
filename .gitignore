@@ -21,3 +21,6 @@ npm-debug.log*
 
 # local dev helpers (machine-specific absolute paths)
 scripts/dev.cmd
+
+# league seed with real player names — kept local, not published
+supabase/seed_gdl_2025-2026.sql
