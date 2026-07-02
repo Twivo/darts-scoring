@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { HomeScreen } from './features/home/HomeScreen';
 import { SetupScreen } from './features/setup/SetupScreen';
 import { GameRoute } from './features/game/GameRoute';
+import { LiveList } from './features/live/LiveList';
+import { LiveMatch } from './features/live/LiveMatch';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminPlayers } from './features/admin/AdminPlayers';
 import { AdminTeams } from './features/admin/AdminTeams';
@@ -18,6 +20,10 @@ export function App() {
         <Route path="/" element={<HomeScreen />} />
         <Route path="/new" element={<SetupScreen />} />
         <Route path="/game/:id" element={<GameRoute />} />
+
+        {/* Live spectating — public, read-only (no scoring controls) */}
+        <Route path="/live" element={<LiveList />} />
+        <Route path="/live/:id" element={<LiveMatch />} />
 
         {/* Championship — gated by admin auth (scoring with login) */}
         <Route

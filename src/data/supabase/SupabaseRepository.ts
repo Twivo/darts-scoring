@@ -216,6 +216,17 @@ export class SupabaseRepository implements DartsRepository {
     return (data as DbMatch[]).map(toMatch);
   }
 
+  async listLiveMatches(): Promise<MatchRecord[]> {
+    // Every in-progress match, regular and championship — for the live view.
+    const { data, error } = await this.sb
+      .from('matches')
+      .select('*')
+      .eq('status', 'IN_PROGRESS')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data as DbMatch[]).map(toMatch);
+  }
+
   // --- teams ---------------------------------------------------------------
 
   async listTeams(search?: string): Promise<TeamWithPlayers[]> {

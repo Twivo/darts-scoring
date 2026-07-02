@@ -38,6 +38,8 @@ export interface DartsRepository {
   saveMatch(record: MatchRecord): Promise<void>;
   /** Matches still in progress (for the resume prompt). */
   listInProgress(): Promise<MatchRecord[]>;
+  /** All in-progress matches (regular + championship) for the live view. */
+  listLiveMatches(): Promise<MatchRecord[]>;
 
   // teams (championship) --------------------------------------------------
   listTeams(search?: string): Promise<TeamWithPlayers[]>;

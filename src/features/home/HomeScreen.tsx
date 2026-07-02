@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { buildGameState } from '@/domain/engine';
 import { listResumable } from '@/store/matchService';
 import { listResumableEncounters } from '@/store/encounterService';
+import { listLiveMatches } from '@/store/liveMatch';
 import { participantLabel } from '@/domain/presentation';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 
@@ -12,6 +13,19 @@ export function HomeScreen() {
   const [resumable, setResumable] = useState<MatchRecord[]>([]);
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [liveCount, setLiveCount] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    const refresh = () =>
+      listLiveMatches().then((m) => alive && setLiveCount(m.length));
+    void refresh();
+    const poll = window.setInterval(() => void refresh(), 8000);
+    return () => {
+      alive = false;
+      window.clearInterval(poll);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -126,6 +140,21 @@ export function HomeScreen() {
         onClick={() => navigate('/championship/new')}
       >
         🏆 Championship match
+      </Button>
+
+      <Button
+        variant="surface"
+        size="lg"
+        fullWidth
+        onClick={() => navigate('/live')}
+      >
+        📺 Watch live
+        {liveCount > 0 && (
+          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-xs font-bold text-white">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+            {liveCount}
+          </span>
+        )}
       </Button>
 
       <Button

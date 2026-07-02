@@ -133,6 +133,15 @@ export class LocalRepository implements DartsRepository {
     );
   }
 
+  async listLiveMatches(): Promise<MatchRecord[]> {
+    const all = read<MatchRecord[]>(MATCHES_KEY, []).filter(
+      (m) => m.status === 'IN_PROGRESS',
+    );
+    return all.sort((a, b) =>
+      (a.updatedAt ?? '') < (b.updatedAt ?? '') ? 1 : -1,
+    );
+  }
+
   // --- teams ---------------------------------------------------------------
 
   async listTeams(search?: string): Promise<TeamWithPlayers[]> {
