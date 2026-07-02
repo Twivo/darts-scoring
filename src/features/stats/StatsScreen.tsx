@@ -1,7 +1,9 @@
 import { useGame } from '@/store/GameContext';
 import { Button } from '@/components/ui/Button';
+import { ShareButton } from '@/components/ShareButton';
 import { participantLabel } from '@/domain/presentation';
 import type { ParticipantStats } from '@/domain/types';
+import type { SharePayload } from '@/lib/share';
 import { Confetti } from './Confetti';
 
 interface StatRow {
@@ -34,6 +36,23 @@ export function StatsScreen() {
     : '—';
 
   const parts = config.participants;
+
+  const buildShare = (): SharePayload => {
+    const sides = parts.map((p) => participantLabel(config, p.id));
+    const legs = parts.map((p) => state.legsWon[p.id] ?? 0);
+    const avgs = parts.map(
+      (p) => state.stats.byParticipant[p.id]?.average3.toFixed(1) ?? '—',
+    );
+    const text =
+      `🎯 ${winnerLabel} wins ${legs.join('–')}!\n` +
+      `${sides.join(' vs ')} · ${config.variant} Double Out\n` +
+      `3-dart avg ${avgs.join(' vs ')} · via DartsScore`;
+    return {
+      title: 'DartsScore result',
+      text,
+      url: window.location.href.split('#')[0],
+    };
+  };
 
   const best = (row: StatRow): string | null => {
     if (!row.better) return null;
@@ -113,7 +132,8 @@ export function StatsScreen() {
         </table>
       </div>
 
-      <div className="relative z-50 mt-8">
+      <div className="relative z-50 mt-8 flex flex-col gap-3">
+        <ShareButton payload={buildShare} />
         <Button variant="accent" size="xl" fullWidth onClick={endGame}>
           New game
         </Button>
