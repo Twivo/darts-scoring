@@ -4,7 +4,6 @@ import { SetupScreen } from './features/setup/SetupScreen';
 import { GameRoute } from './features/game/GameRoute';
 import { LiveList } from './features/live/LiveList';
 import { LiveMatch } from './features/live/LiveMatch';
-import { TvMode } from './features/live/TvMode';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminPlayers } from './features/admin/AdminPlayers';
 import { PlayerProfile } from './features/admin/PlayerProfile';
@@ -25,7 +24,6 @@ export function App() {
 
         {/* Live spectating — public, read-only (no scoring controls) */}
         <Route path="/live" element={<LiveList />} />
-        <Route path="/live/tv" element={<TvMode />} />
         <Route path="/live/:id" element={<LiveMatch />} />
 
         {/* Championship — gated by admin auth (scoring with login) */}

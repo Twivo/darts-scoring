@@ -166,15 +166,6 @@ export function HomeScreen() {
         variant="surface"
         size="lg"
         fullWidth
-        onClick={() => navigate('/live/tv')}
-      >
-        {t('home.tv')}
-      </Button>
-
-      <Button
-        variant="surface"
-        size="lg"
-        fullWidth
         onClick={() => navigate('/admin')}
       >
         {t('home.admin')}
