@@ -13,11 +13,13 @@ export function EncounterPlay({
   fixture,
   onEncounterUpdate,
   onResult,
+  onBack,
 }: {
   encounter: EncounterRecord;
   fixture: Fixture;
   onEncounterUpdate: (e: EncounterRecord) => void;
   onResult: (winner: Side) => void;
+  onBack: () => void;
 }) {
   const [match, setMatch] = useState<MatchRecord | null>(null);
 
@@ -70,6 +72,7 @@ export function EncounterPlay({
         encounter={encounter}
         fixture={fixture}
         onConfirm={startMatch}
+        onBack={onBack}
       />
     );
   }

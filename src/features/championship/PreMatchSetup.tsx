@@ -13,10 +13,12 @@ export function PreMatchSetup({
   encounter,
   fixture,
   onConfirm,
+  onBack,
 }: {
   encounter: EncounterRecord;
   fixture: Fixture;
   onConfirm: (v: { aOrder: string[]; bOrder: string[]; starter: Side }) => void;
+  onBack: () => void;
 }) {
   const { teams } = encounter.plan;
   const isDouble = fixture.kind === 'DOUBLE';
@@ -40,6 +42,14 @@ export function PreMatchSetup({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto px-4 py-5">
+      {encounter.currentIndex > 0 && (
+        <button
+          onClick={onBack}
+          className="mb-1 self-start rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
+        >
+          ↩ Previous match
+        </button>
+      )}
       <div className="mb-4 text-center">
         <div className="text-xs uppercase tracking-wide text-[var(--color-text-dim)]">
           Match {fixture.index + 1} · {isDouble ? 'Doubles' : 'Singles'}

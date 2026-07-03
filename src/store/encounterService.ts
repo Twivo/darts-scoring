@@ -219,6 +219,18 @@ export async function advanceEncounter(
   return updated;
 }
 
+/** Step back to the previous fixture (the bull-up "Back" action). */
+export async function unadvanceEncounter(
+  encounter: EncounterRecord,
+): Promise<EncounterRecord> {
+  const updated = {
+    ...encounter,
+    currentIndex: Math.max(0, encounter.currentIndex - 1),
+  };
+  await persistEncounter(updated);
+  return updated;
+}
+
 /** Compose a block's fixtures (assign players), then persist. */
 export async function composeBlock(
   encounter: EncounterRecord,

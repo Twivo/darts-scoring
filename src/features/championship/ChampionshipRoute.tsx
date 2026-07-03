@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   advanceEncounter,
+  unadvanceEncounter,
   loadEncounter,
   recordFixtureResult,
   reopenFixture,
@@ -86,6 +87,9 @@ export function ChampionshipRoute() {
             encounter={encounter}
             fixture={state.currentFixture}
             onEncounterUpdate={setEncounter}
+            onBack={() =>
+              void unadvanceEncounter(encounter).then(setEncounter)
+            }
             onResult={(winner: Side) =>
               void recordFixtureResult(
                 encounter,
