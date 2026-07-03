@@ -162,9 +162,13 @@ export function aggregatePlayerStats(
 
         if (reachedFinish) a.checkoutAttempts += 1;
 
-        // won leg by checkout -> best (fewest) leg darts
+        // won leg by checkout -> best (fewest) leg darts. Count the winning
+        // SIDE's darts (both partners in doubles), not just this player's —
+        // otherwise a doubles leg looks like < 9 darts and gets hidden.
         if (leg.winnerId === participantOfPlayer(pid) && leg.endReason === 'CHECKOUT') {
-          const legDarts = visits.reduce((s, v) => s + v.event.darts, 0);
+          const legDarts = leg.visits
+            .filter((v) => v.participantId === leg.winnerId)
+            .reduce((s, v) => s + v.event.darts, 0);
           a.bestLegDarts =
             a.bestLegDarts === null ? legDarts : Math.min(a.bestLegDarts, legDarts);
         }
