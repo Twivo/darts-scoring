@@ -5,11 +5,13 @@ import { buildGameState } from '@/domain/engine';
 import { listResumable } from '@/store/matchService';
 import { listResumableEncounters } from '@/store/encounterService';
 import { listLiveMatches } from '@/store/liveMatch';
+import { useT, LangToggle } from '@/store/LangContext';
 import { participantLabel } from '@/domain/presentation';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 
 export function HomeScreen() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [resumable, setResumable] = useState<MatchRecord[]>([]);
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -51,20 +53,23 @@ export function HomeScreen() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-10 px-6 py-12">
+    <div className="relative mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-10 px-6 py-12">
+      <div className="absolute right-4 top-4">
+        <LangToggle />
+      </div>
       <div className="text-center">
         <div className="mb-3 text-7xl">🎯</div>
         <h1 className="text-5xl font-black tracking-tight">
           DARTS<span className="text-[var(--color-accent)]">SCORE</span>
         </h1>
         <p className="mt-2 text-sm text-[var(--color-text-dim)]">
-          Match scoring — 501 / 601 Double Out
+          {t('home.tagline')}
         </p>
       </div>
 
       {encounters.length > 0 && (
         <div className="w-full rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-5 shadow-[0_8px_40px_-12px_var(--color-accent)]">
-          <p className="mb-3 text-lg font-bold">🏆 Championship in progress</p>
+          <p className="mb-3 text-lg font-bold">{t('home.champInProgress')}</p>
           <div className="flex flex-col gap-2">
             {encounters.map((e) => (
               <button
@@ -77,13 +82,13 @@ export function HomeScreen() {
                     {e.plan.teams.A.name} vs {e.plan.teams.B.name}
                   </span>
                   <span className="text-xs text-[var(--color-text-dim)]">
-                    {e.scoreA} – {e.scoreB} · match{' '}
+                    {e.scoreA} – {e.scoreB} · {t('home.match')}{' '}
                     {Math.min(e.currentIndex + 1, e.plan.fixtures.length)}/
                     {e.plan.fixtures.length}
                   </span>
                 </span>
                 <span className="text-sm font-bold text-[var(--color-accent)]">
-                  Resume →
+                  {t('home.resume')}
                 </span>
               </button>
             ))}
@@ -95,8 +100,8 @@ export function HomeScreen() {
         <div className="w-full rounded-2xl border border-[var(--color-accent)] bg-[var(--color-surface)] p-5 shadow-[0_8px_40px_-12px_var(--color-accent)]">
           <p className="mb-3 text-lg font-bold">
             {resumable.length === 1
-              ? 'Game in progress'
-              : `${resumable.length} games in progress`}
+              ? t('home.gameInProgress')
+              : `${resumable.length} ${t('home.gamesInProgress')}`}
           </p>
           <div className="flex flex-col gap-2">
             {resumable.map((m) => {
@@ -115,7 +120,7 @@ export function HomeScreen() {
                     </span>
                   </span>
                   <span className="text-sm font-bold text-[var(--color-accent)]">
-                    Resume →
+                    {t('home.resume')}
                   </span>
                 </button>
               );
@@ -130,7 +135,7 @@ export function HomeScreen() {
         fullWidth
         onClick={() => navigate('/new')}
       >
-        New game
+        {t('home.new')}
       </Button>
 
       <Button
@@ -139,7 +144,7 @@ export function HomeScreen() {
         fullWidth
         onClick={() => navigate('/championship/new')}
       >
-        🏆 Championship match
+        {t('home.championship')}
       </Button>
 
       <Button
@@ -148,7 +153,7 @@ export function HomeScreen() {
         fullWidth
         onClick={() => navigate('/live')}
       >
-        📺 Watch live
+        {t('home.live')}
         {liveCount > 0 && (
           <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-xs font-bold text-white">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
@@ -161,13 +166,22 @@ export function HomeScreen() {
         variant="surface"
         size="lg"
         fullWidth
+        onClick={() => navigate('/live/tv')}
+      >
+        {t('home.tv')}
+      </Button>
+
+      <Button
+        variant="surface"
+        size="lg"
+        fullWidth
         onClick={() => navigate('/admin')}
       >
-        Admin
+        {t('home.admin')}
       </Button>
 
       {!loaded && (
-        <p className="text-xs text-[var(--color-text-mute)]">Syncing…</p>
+        <p className="text-xs text-[var(--color-text-mute)]">{t('home.syncing')}</p>
       )}
     </div>
   );

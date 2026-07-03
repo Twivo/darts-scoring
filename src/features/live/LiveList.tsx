@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { buildGameState } from '@/domain/engine';
 import { participantDisplay } from '@/domain/presentation';
 import { listLiveMatches } from '@/store/liveMatch';
+import { useT } from '@/store/LangContext';
 import type { MatchRecord } from '@/data/types';
 
 /** Public list of matches currently in progress — tap one to watch it live. */
 export function LiveList() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -32,16 +34,16 @@ export function LiveList() {
           onClick={() => navigate('/')}
           className="rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
         >
-          ← Home
+          {t('common.home')}
         </button>
-        <h1 className="text-xl font-black">📺 Live matches</h1>
+        <h1 className="text-xl font-black">{t('live.title')}</h1>
       </div>
 
       {!loaded ? (
-        <p className="py-16 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-16 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : matches.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-10 text-center text-[var(--color-text-dim)]">
-          No match is being played right now.
+          {t('live.none')}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -67,7 +69,7 @@ export function LiveList() {
                     <span className="block truncate font-semibold">{sides}</span>
                     <span className="text-xs text-[var(--color-text-dim)]">
                       {m.variant} {m.mode === 'DOUBLE' ? 'Doubles' : 'Singles'}
-                      {m.encounterId ? ' · championship' : ''} · legs {legs}
+                      {m.encounterId ? ` · ${t('live.championship')}` : ''} · legs {legs}
                     </span>
                   </span>
                   <span className="text-[var(--color-text-dim)]">›</span>

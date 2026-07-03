@@ -5,6 +5,8 @@ import { buildGameState } from '@/domain/engine';
 import { loadMatch } from '@/store/matchService';
 import { loadEncounter } from '@/store/encounterService';
 import { subscribeMatch } from '@/store/liveMatch';
+import { useT } from '@/store/LangContext';
+import { QrCode } from '@/components/QrCode';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 import { LiveBoard, type EncounterContext } from './LiveBoard';
 import { LiveEncounterRecap } from './LiveEncounterRecap';
@@ -13,6 +15,7 @@ import { LiveEncounterRecap } from './LiveEncounterRecap';
 export function LiveMatch() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useT();
   const [match, setMatch] = useState<MatchRecord | null>(null);
   const [encounter, setEncounter] = useState<EncounterRecord | null>(null);
   const [encMatches, setEncMatches] = useState<MatchRecord[]>([]);
@@ -95,20 +98,26 @@ export function LiveMatch() {
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-3 py-4">
-      <div className="mb-3 flex items-center">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <button
           onClick={() => navigate('/live')}
           className="rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
         >
-          ← Live matches
+          {t('live.back')}
         </button>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-[var(--color-text-dim)] sm:inline">
+            {t('live.scan')}
+          </span>
+          <QrCode value={typeof window !== 'undefined' ? window.location.href : ''} size={72} />
+        </div>
       </div>
 
       {loading ? (
-        <p className="py-16 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-16 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : !state ? (
         <p className="py-16 text-center text-[var(--color-text-dim)]">
-          This match is no longer available.
+          {t('live.gone')}
         </p>
       ) : (
         <>
@@ -118,9 +127,7 @@ export function LiveMatch() {
             <div
               className={cnBanner(encounterFinished)}
             >
-              {encounterFinished
-                ? '🏆 Championship finished — see the full recap below.'
-                : 'Match finished — waiting for the next match…'}
+              {encounterFinished ? t('live.finished') : t('live.waiting')}
             </div>
           )}
 

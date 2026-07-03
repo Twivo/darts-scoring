@@ -4,8 +4,10 @@ import { SetupScreen } from './features/setup/SetupScreen';
 import { GameRoute } from './features/game/GameRoute';
 import { LiveList } from './features/live/LiveList';
 import { LiveMatch } from './features/live/LiveMatch';
+import { TvMode } from './features/live/TvMode';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminPlayers } from './features/admin/AdminPlayers';
+import { PlayerProfile } from './features/admin/PlayerProfile';
 import { AdminTeams } from './features/admin/AdminTeams';
 import { AdminDashboard } from './features/admin/AdminDashboard';
 import { AdminChampionship } from './features/admin/AdminChampionship';
@@ -23,6 +25,7 @@ export function App() {
 
         {/* Live spectating — public, read-only (no scoring controls) */}
         <Route path="/live" element={<LiveList />} />
+        <Route path="/live/tv" element={<TvMode />} />
         <Route path="/live/:id" element={<LiveMatch />} />
 
         {/* Championship — gated by admin auth (scoring with login) */}
@@ -47,6 +50,7 @@ export function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/players" replace />} />
           <Route path="players" element={<AdminPlayers />} />
+          <Route path="players/:id" element={<PlayerProfile />} />
           <Route path="teams" element={<AdminTeams />} />
           <Route path="stats" element={<AdminDashboard />} />
           <Route path="championship" element={<AdminChampionship />} />

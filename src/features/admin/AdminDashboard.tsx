@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getRepository } from '@/data';
 import type { MatchQuery, MatchRecord, Season } from '@/data/types';
 import {
@@ -68,6 +69,7 @@ function periodRange(period: Period, from: string, to: string): Partial<MatchQue
 }
 
 export function AdminDashboard() {
+  const navigate = useNavigate();
   const repo = useMemo(() => getRepository(), []);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState('');
@@ -283,7 +285,12 @@ export function AdminDashboard() {
               {displayed.map((r, i) => (
                 <tr key={r.playerId} className={i % 2 ? 'bg-[var(--color-surface)]' : ''}>
                   <td className="sticky left-0 z-10 whitespace-nowrap bg-[inherit] px-3 py-2 font-semibold">
-                    {r.name}
+                    <button
+                      onClick={() => navigate(`/admin/players/${r.playerId}`)}
+                      className="text-left hover:text-[var(--color-accent)] hover:underline"
+                    >
+                      {r.name}
+                    </button>
                   </td>
                   {COLUMNS.map((c) => (
                     <td
