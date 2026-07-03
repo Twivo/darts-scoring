@@ -5,8 +5,9 @@ import type { EncounterRecord } from '@/data/types';
 import type { Fixture, Side } from '@/domain/championship/types';
 
 /**
- * Shown before every match: pick the throwing order (doubles) and who won the
- * bull-up (which side throws first). The choice is kept for the whole match.
+ * Shown before every match: pick the players (settable/changeable at any time,
+ * so a match can always be started even if it wasn't composed beforehand), the
+ * throwing order (doubles), and who won the bull-up (which side throws first).
  */
 export function PreMatchSetup({
   encounter,
@@ -19,15 +20,23 @@ export function PreMatchSetup({
 }) {
   const { teams } = encounter.plan;
   const isDouble = fixture.kind === 'DOUBLE';
-  const [aOrder, setAOrder] = useState<string[]>(fixture.aPlayerIds);
-  const [bOrder, setBOrder] = useState<string[]>(fixture.bPlayerIds);
+  const per = isDouble ? 2 : 1;
+  const pad = (ids: string[]) =>
+    Array.from({ length: per }, (_, i) => ids[i] ?? '');
+  const [aOrder, setAOrder] = useState<string[]>(pad(fixture.aPlayerIds));
+  const [bOrder, setBOrder] = useState<string[]>(pad(fixture.bPlayerIds));
   const [starter, setStarter] = useState<Side | null>(null);
 
   const nameOf = (id: string) =>
     [...teams.A.players, ...teams.B.players].find((p) => p.id === id)?.name ??
-    '???';
-  const swap = (order: string[], set: (v: string[]) => void) =>
-    set([order[1]!, order[0]!]);
+    '—';
+  const setSlot = (side: Side, slot: number, value: string) => {
+    const [order, set] = side === 'A' ? [aOrder, setAOrder] : [bOrder, setBOrder];
+    set(order.map((v, i) => (i === slot ? value : v)));
+  };
+  const sideOk = (order: string[]) =>
+    order.every(Boolean) && new Set(order).size === per;
+  const complete = sideOk(aOrder) && sideOk(bOrder);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto px-4 py-5">
@@ -38,27 +47,22 @@ export function PreMatchSetup({
         <h2 className="text-xl font-black">Bull-up</h2>
       </div>
 
-      {isDouble && (
-        <div className="mb-4">
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-            Throwing order
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <OrderCard
-              team={teams.A.name}
-              order={aOrder}
-              nameOf={nameOf}
-              onSwap={() => swap(aOrder, setAOrder)}
-            />
-            <OrderCard
-              team={teams.B.name}
-              order={bOrder}
-              nameOf={nameOf}
-              onSwap={() => swap(bOrder, setBOrder)}
-            />
-          </div>
-        </div>
-      )}
+      {/* players (settable / changeable here at any time) */}
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
+        Players{isDouble ? ' (throwing order)' : ''}
+      </h3>
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        {(['A', 'B'] as Side[]).map((side) => (
+          <SidePicker
+            key={side}
+            team={side === 'A' ? teams.A.name : teams.B.name}
+            players={side === 'A' ? teams.A.players : teams.B.players}
+            values={side === 'A' ? aOrder : bOrder}
+            count={per}
+            onChange={(slot, v) => setSlot(side, slot, v)}
+          />
+        ))}
+      </div>
 
       <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
         Who won the bull and starts?
@@ -80,19 +84,25 @@ export function PreMatchSetup({
             >
               <div className="text-xs opacity-80">{teamName}</div>
               <div className="font-black">
-                {order.map(nameOf).join(' & ') || '—'}
+                {order.filter(Boolean).map(nameOf).join(' & ') || '—'}
               </div>
             </button>
           );
         })}
       </div>
 
+      {!complete && (
+        <p className="mt-3 text-center text-xs text-[var(--color-warning)]">
+          Select {isDouble ? 'two players' : 'a player'} for each team to start.
+        </p>
+      )}
+
       <Button
         variant="accent"
         size="xl"
         fullWidth
-        className="mt-6"
-        disabled={!starter}
+        className="mt-4"
+        disabled={!complete || !starter}
         onClick={() => starter && onConfirm({ aOrder, bOrder, starter })}
       >
         Start match ▶
@@ -101,36 +111,41 @@ export function PreMatchSetup({
   );
 }
 
-function OrderCard({
+function SidePicker({
   team,
-  order,
-  nameOf,
-  onSwap,
+  players,
+  values,
+  count,
+  onChange,
 }: {
   team: string;
-  order: string[];
-  nameOf: (id: string) => string;
-  onSwap: () => void;
+  players: { id: string; name: string }[];
+  values: string[];
+  count: number;
+  onChange: (slot: number, value: string) => void;
 }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-      <div className="mb-1 truncate text-xs font-semibold text-[var(--color-text-dim)]">
+      <div className="mb-1.5 truncate text-xs font-semibold text-[var(--color-text-dim)]">
         {team}
       </div>
-      <ol className="mb-2 flex flex-col gap-1 text-sm">
-        {order.map((id, i) => (
-          <li key={id} className="flex items-center gap-2">
-            <span className="text-[var(--color-text-mute)]">{i + 1}.</span>
-            <span className="font-semibold">{nameOf(id)}</span>
-          </li>
+      <div className="flex flex-col gap-1.5">
+        {Array.from({ length: count }, (_, slot) => (
+          <select
+            key={slot}
+            value={values[slot] ?? ''}
+            onChange={(e) => onChange(slot, e.target.value)}
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          >
+            <option value="">{count > 1 ? `Player ${slot + 1}` : 'Select player'}</option>
+            {players.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
         ))}
-      </ol>
-      <button
-        onClick={onSwap}
-        className="w-full rounded-lg border border-[var(--color-border)] py-1 text-xs text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
-      >
-        ↕ Swap order
-      </button>
+      </div>
     </div>
   );
 }

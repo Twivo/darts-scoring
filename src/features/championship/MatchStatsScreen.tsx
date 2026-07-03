@@ -19,7 +19,6 @@ const COLS: Col[] = [
   { key: 'legs', label: 'Legs', fmt: (s) => `${s.legsWon}` },
   { key: 'avg', label: '3-dart', fmt: (s) => s.average3.toFixed(1) },
   { key: 'f9', label: 'First 9', fmt: (s) => s.first9Average.toFixed(1) },
-  { key: 'co', label: 'CO%', fmt: (s) => `${s.checkoutPercent.toFixed(0)}%` },
   { key: 'bco', label: 'Best CO', fmt: (s) => `${s.bestCheckout}` },
   { key: '180', label: '180', fmt: (s) => `${s.count180}` },
   { key: '140', label: '140+', fmt: (s) => `${s.count140plus}` },
@@ -31,11 +30,13 @@ const COLS: Col[] = [
 export function MatchStatsScreen({
   fixture,
   onNext,
+  onBack,
   isLast,
 }: {
   encounter: EncounterRecord;
   fixture: Fixture;
   onNext: () => void;
+  onBack: () => void;
   isLast: boolean;
 }) {
   const [match, setMatch] = useState<MatchRecord | null>(null);
@@ -116,15 +117,14 @@ export function MatchStatsScreen({
         </table>
       </div>
 
-      <Button
-        variant="accent"
-        size="xl"
-        fullWidth
-        className="mt-5"
-        onClick={onNext}
-      >
-        {isLast ? 'See final result ▶' : '▶ Next match'}
-      </Button>
+      <div className="mt-5 flex flex-col gap-3">
+        <Button variant="surface" size="lg" fullWidth onClick={onBack}>
+          ↩ Back — correct the score
+        </Button>
+        <Button variant="accent" size="xl" fullWidth onClick={onNext}>
+          {isLast ? 'See final result ▶' : '▶ Next match'}
+        </Button>
+      </div>
     </div>
   );
 }

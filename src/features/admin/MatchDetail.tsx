@@ -29,7 +29,6 @@ export function MatchDetail({
     { label: 'Legs won', get: (id) => `${state.legsWon[id] ?? 0}` },
     { label: '3-dart avg', get: (id) => statOf(id, (s) => s.average3.toFixed(1)) },
     { label: 'First 9 avg', get: (id) => statOf(id, (s) => s.first9Average.toFixed(1)) },
-    { label: 'Checkout %', get: (id) => statOf(id, (s) => `${s.checkoutPercent.toFixed(0)}%`) },
     { label: 'Best checkout', get: (id) => statOf(id, (s) => `${s.bestCheckout}`) },
     { label: '180', get: (id) => statOf(id, (s) => `${s.count180}`) },
     { label: '140+', get: (id) => statOf(id, (s) => `${s.count140plus}`) },

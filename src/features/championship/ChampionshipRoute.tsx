@@ -4,7 +4,9 @@ import {
   advanceEncounter,
   loadEncounter,
   recordFixtureResult,
+  reopenFixture,
 } from '@/store/encounterService';
+import { loadMatch, persistMatch } from '@/store/matchService';
 import { buildEncounterState } from '@/domain/championship/encounter';
 import type { EncounterRecord } from '@/data/types';
 import type { Side } from '@/domain/championship/types';
@@ -102,6 +104,24 @@ export function ChampionshipRoute() {
             fixture={state.currentFixture}
             isLast={state.currentIndex + 1 >= state.total}
             onNext={() => void advanceEncounter(encounter).then(setEncounter)}
+            onBack={async () => {
+              const f = state.currentFixture!;
+              // rewind the match (drop the winning visit) so it can be corrected
+              if (f.matchId) {
+                const m = await loadMatch(f.matchId);
+                if (m && m.events.length > 0) {
+                  await persistMatch({
+                    ...m,
+                    events: m.events.slice(0, -1),
+                    status: 'IN_PROGRESS',
+                    winnerParticipant: null,
+                    finishedAt: null,
+                  });
+                }
+              }
+              const reopened = await reopenFixture(encounter, f.index);
+              setEncounter(reopened);
+            }}
           />
         )}
 

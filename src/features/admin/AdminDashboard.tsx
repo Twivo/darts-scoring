@@ -27,7 +27,6 @@ const COLUMNS: Column[] = [
   { key: 'avg', label: '3-dart', get: (s) => s.average3, fmt: (s) => s.average3.toFixed(1) },
   { key: 'first9', label: 'First 9', get: (s) => s.first9Average, fmt: (s) => s.first9Average.toFixed(1) },
   { key: 'first3', label: 'First 3', get: (s) => s.first3Average, fmt: (s) => s.first3Average.toFixed(1) },
-  { key: 'copct', label: 'CO%', get: (s) => s.checkoutPercent, fmt: (s) => `${s.checkoutPercent.toFixed(0)}%` },
   { key: 'coavg', label: 'Avg CO', get: (s) => s.averageCheckout, fmt: (s) => s.averageCheckout.toFixed(0) },
   { key: 'cobest', label: 'Best CO', get: (s) => s.bestCheckout, fmt: (s) => `${s.bestCheckout}` },
   { key: 't180', label: '180', get: (s) => s.count180, fmt: (s) => `${s.count180}` },
@@ -36,7 +35,7 @@ const COLUMNS: Column[] = [
   { key: 't60', label: '60+', get: (s) => s.count60plus, fmt: (s) => `${s.count60plus}` },
   { key: 'busts', label: 'Busts', get: (s) => s.busts, fmt: (s) => `${s.busts}` },
   { key: 'high', label: 'High', get: (s) => s.highestVisit, fmt: (s) => `${s.highestVisit}` },
-  { key: 'bestleg', label: 'Best leg', get: (s) => s.bestLegDarts ?? 999, fmt: (s) => (s.bestLegDarts ?? '—').toString() },
+  { key: 'bestleg', label: 'Best leg', get: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? s.bestLegDarts : 999), fmt: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? `${s.bestLegDarts}` : '—') },
   { key: 'darts', label: 'Darts', get: (s) => s.totalDarts, fmt: (s) => `${s.totalDarts}` },
 ];
 

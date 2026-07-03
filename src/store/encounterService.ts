@@ -180,6 +180,36 @@ export async function recordFixtureResult(
   return updated;
 }
 
+/**
+ * Reopen a just-finished fixture to correct a mis-entry: clears its result and
+ * marks the encounter in progress again. The caller also rewinds the match
+ * itself (removes the winning visit) so it can be finished correctly.
+ */
+export async function reopenFixture(
+  encounter: EncounterRecord,
+  fixtureIndex: number,
+): Promise<EncounterRecord> {
+  const plan = {
+    ...encounter.plan,
+    fixtures: encounter.plan.fixtures.map((f) =>
+      f.index === fixtureIndex ? { ...f, winner: null } : f,
+    ),
+  };
+  const scoreA = plan.fixtures.filter((f) => f.winner === 'A').length;
+  const scoreB = plan.fixtures.filter((f) => f.winner === 'B').length;
+  const updated: EncounterRecord = {
+    ...encounter,
+    plan,
+    scoreA,
+    scoreB,
+    status: 'IN_PROGRESS',
+    winner: null,
+    finishedAt: null,
+  };
+  await persistEncounter(updated);
+  return updated;
+}
+
 /** Move on to the next fixture (the "Next match" action). */
 export async function advanceEncounter(
   encounter: EncounterRecord,

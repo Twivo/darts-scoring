@@ -19,7 +19,7 @@ const ROWS: StatRow[] = [
   { key: 'avg', label: '3-dart average', format: (s) => s.average3.toFixed(1), better: 'high' },
   { key: 'first9', label: 'First 9 avg', format: (s) => s.first9Average.toFixed(1), better: 'high' },
   { key: 'darts', label: 'Total darts', format: (s) => String(s.totalDarts), better: 'low' },
-  { key: 'best', label: 'Best leg (darts)', format: (s) => (s.bestLegDarts ?? '—').toString(), better: 'low' },
+  { key: 'best', label: 'Best leg (darts)', format: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? `${s.bestLegDarts}` : '—'), better: 'low' },
   { key: 'worst', label: 'Worst leg (darts)', format: (s) => (s.worstLegDarts ?? '—').toString(), better: 'high' },
   { key: 'high', label: 'Highest visit', format: (s) => String(s.highestVisit), better: 'high' },
   { key: '180', label: '180s', format: (s) => String(s.count180), better: 'high' },
@@ -153,7 +153,7 @@ function numericFor(key: string, s: ParticipantStats): number | null {
     case 'darts': return s.totalDarts;
     case 'co': return s.checkoutsHit;
     case 'copct': return s.checkoutPercent;
-    case 'best': return s.bestLegDarts ?? null;
+    case 'best': return s.bestLegDarts != null && s.bestLegDarts >= 9 ? s.bestLegDarts : null;
     case 'worst': return s.worstLegDarts ?? null;
     case 'high': return s.highestVisit;
     case '180': return s.count180;

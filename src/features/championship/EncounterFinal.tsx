@@ -109,7 +109,7 @@ export function EncounterFinal({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--color-surface-2)]">
-                {['Player', '3-dart', 'First 9', 'CO%', 'Best CO', '180', '140+', '100+', 'Legs', 'Darts'].map((h) => (
+                {['Player', '3-dart', 'First 9', 'Best CO', '180', '140+', '100+', 'Legs', 'Darts'].map((h) => (
                   <th key={h} className="px-2.5 py-2 text-right font-semibold first:text-left">
                     {h}
                   </th>
@@ -122,7 +122,6 @@ export function EncounterFinal({
                   <td className="whitespace-nowrap px-2.5 py-2 font-semibold">{nameOf(s.playerId)}</td>
                   <td className="px-2.5 py-2 text-right tnum">{s.average3.toFixed(1)}</td>
                   <td className="px-2.5 py-2 text-right tnum">{s.first9Average.toFixed(1)}</td>
-                  <td className="px-2.5 py-2 text-right tnum">{s.checkoutPercent.toFixed(0)}%</td>
                   <td className="px-2.5 py-2 text-right tnum">{s.bestCheckout}</td>
                   <td className="px-2.5 py-2 text-right tnum">{s.count180}</td>
                   <td className="px-2.5 py-2 text-right tnum">{s.count140plus}</td>
