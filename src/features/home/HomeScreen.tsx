@@ -67,7 +67,12 @@ export function HomeScreen() {
         <LangToggle />
       </div>
       <div className="text-center">
-        <div className="mb-3 text-7xl">🎯</div>
+        <img
+          src="./home-logo.png"
+          alt="GenevaDartsConnect"
+          className="mx-auto mb-4 h-auto w-64 max-w-[82vw] drop-shadow-2xl sm:w-72"
+          draggable={false}
+        />
         <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
           GenevaDarts
           <span className="block text-[var(--color-accent)] sm:inline">Connect</span>

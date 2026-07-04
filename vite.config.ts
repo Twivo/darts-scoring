@@ -13,7 +13,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['pwa-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'app-icon.png'],
       manifest: {
         name: 'GenevaDartsConnect — 501 / 601 scoring',
         short_name: 'GenevaDartsConnect',
@@ -26,8 +26,8 @@ export default defineConfig({
         start_url: '.',
         scope: '.',
         icons: [
-          { src: 'pwa-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'pwa-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: 'app-icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'app-icon.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
