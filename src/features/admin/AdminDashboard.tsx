@@ -69,6 +69,39 @@ function periodRange(period: Period, from: string, to: string): Partial<MatchQue
   }
 }
 
+const CSV_FORMULA_TRIGGER = /^[\t\r\n]|^\s*[=+\-@]/;
+
+function csvCell(value: unknown): string {
+  const raw = String(value ?? '');
+  const safe = CSV_FORMULA_TRIGGER.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+function safeFilePart(value: string | undefined): string {
+  const safe = (value ?? 'season')
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return safe || 'season';
+}
+
+function downloadCsv(filename: string, rows: unknown[][]): void {
+  const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  try {
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+  } finally {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { t } = useT();
@@ -154,18 +187,12 @@ export function AdminDashboard() {
     }
   };
 
-  // Export the current (filtered/sorted) stats table to an Excel file.
-  // xlsx is imported lazily so it never weighs on the initial bundle.
-  const exportXlsx = async () => {
-    const XLSX = await import('xlsx');
+  // Export the current filtered table without pulling vulnerable spreadsheet parsers.
+  const exportCsv = () => {
     const header = [t('stats.row.player'), ...COLUMNS.map((c) => t(c.labelKey))];
     const rows = displayed.map((r) => [r.name, ...COLUMNS.map((c) => c.fmt(r))]);
-    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Championship stats');
-    const season =
-      seasons.find((s) => s.id === seasonId)?.name?.replace(/\//g, '-') ?? 'season';
-    XLSX.writeFile(wb, `darts-stats-${season}.xlsx`);
+    const season = safeFilePart(seasons.find((s) => s.id === seasonId)?.name);
+    downloadCsv(`darts-stats-${season}.csv`, [header, ...rows]);
   };
 
   // Per-player match history (shown when a single player is selected).
@@ -268,11 +295,11 @@ export function AdminDashboard() {
               .replace('{players}', String(rows.length))}
           </span>
           <button
-            onClick={() => void exportXlsx()}
+            onClick={exportCsv}
             disabled={displayed.length === 0}
             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold hover:border-[var(--color-accent)] disabled:opacity-50"
           >
-            ⬇ Excel
+            {t('admin.exportCsv')}
           </button>
         </div>
       </div>

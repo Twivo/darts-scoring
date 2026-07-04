@@ -288,6 +288,7 @@ const DICT: Record<string, { en: string; fr: string }> = {
   'admin.thisYear': { en: 'This year', fr: 'Cette année' },
   'admin.custom': { en: 'Custom…', fr: 'Personnalisé…' },
   'admin.counts': { en: '{matches} matches · {players} players', fr: '{matches} matchs · {players} joueurs' },
+  'admin.exportCsv': { en: 'CSV', fr: 'CSV' },
   'admin.reviewCounts': { en: '{matches} matches · {encounters} encounters · {players} players', fr: '{matches} matchs · {encounters} rencontres · {players} joueurs' },
   'admin.noStats': { en: 'No stats for these filters yet.', fr: 'Aucune statistique pour ces filtres.' },
   'admin.matchHistory': { en: 'match history', fr: 'historique des matchs' },

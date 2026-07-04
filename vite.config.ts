@@ -36,8 +36,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         navigateFallback: 'index.html',
       },
-      // Let the service worker run in the dev server so it can be verified here.
-      devOptions: { enabled: true, type: 'module' },
+      // Keep the service worker out of dev to avoid stale local caches.
+      devOptions: { enabled: false, type: 'module' },
     }),
   ],
   resolve: {
