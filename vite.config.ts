@@ -15,8 +15,8 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['pwa-icon.svg'],
       manifest: {
-        name: 'DartsScore — 501 / 601 scoring',
-        short_name: 'DartsScore',
+        name: 'GenevaDartsConnect — 501 / 601 scoring',
+        short_name: 'GenevaDartsConnect',
         description:
           'Touch-first darts scoring: 501/601 Double Out, team championship, live stats.',
         theme_color: '#0b0f14',

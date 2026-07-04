@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { QrCode } from '@/components/QrCode';
 import { buildGameState } from '@/domain/engine';
 import { listResumable } from '@/store/matchService';
 import { listResumableEncounters } from '@/store/encounterService';
@@ -16,6 +17,7 @@ export function HomeScreen() {
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [liveCount, setLiveCount] = useState(0);
+  const liveUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#/live`;
 
   useEffect(() => {
     let alive = true;
@@ -59,8 +61,9 @@ export function HomeScreen() {
       </div>
       <div className="text-center">
         <div className="mb-3 text-7xl">🎯</div>
-        <h1 className="text-5xl font-black tracking-tight">
-          DARTS<span className="text-[var(--color-accent)]">SCORE</span>
+        <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
+          GenevaDarts
+          <span className="block text-[var(--color-accent)] sm:inline">Connect</span>
         </h1>
         <p className="mt-2 text-sm text-[var(--color-text-dim)]">
           {t('home.tagline')}
@@ -162,11 +165,21 @@ export function HomeScreen() {
         )}
       </Button>
 
+      <div className="flex w-full items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <QrCode value={liveUrl} size={104} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">{t('live.scan')}</p>
+          <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
+            {t('home.live')}
+          </p>
+        </div>
+      </div>
+
       <Button
         variant="surface"
         size="lg"
         fullWidth
-        onClick={() => navigate('/admin')}
+        onClick={() => navigate('/admin/stats')}
       >
         {t('home.admin')}
       </Button>

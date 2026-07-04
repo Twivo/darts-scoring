@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
-import { persistEncounter } from '@/store/encounterService';
+import { getRepository } from '@/data';
+import { fixtureMatchConfig, persistEncounter } from '@/store/encounterService';
+import { loadMatch, persistMatch } from '@/store/matchService';
 import type { EncounterRecord } from '@/data/types';
 import type {
   EncounterSettings,
@@ -30,8 +32,33 @@ export function EncounterConfig({
   });
   const [fixtures, setFixtures] = useState<Fixture[]>(encounter.plan.fixtures);
   const [busy, setBusy] = useState(false);
+  // Fixture indices whose linked match has no recorded visit yet (0 events).
+  const [zeroEventIdx, setZeroEventIdx] = useState<Set<number>>(new Set());
 
-  const editable = (f: Fixture) => f.matchId === null && f.winner === null;
+  useEffect(() => {
+    let alive = true;
+    void getRepository()
+      .listMatches({ encounterId: encounter.id })
+      .then((ms) => {
+        if (!alive) return;
+        const s = new Set<number>();
+        for (const m of ms)
+          if ((m.events?.length ?? 0) === 0 && m.fixtureIndex != null)
+            s.add(m.fixtureIndex);
+        setZeroEventIdx(s);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [encounter.id]);
+
+  // Players stay editable until a visit is recorded: a fixture that isn't
+  // launched, or is launched with no darts thrown yet. Reordering the play
+  // sequence stays limited to fixtures that haven't been launched at all.
+  const canEditPlayers = (f: Fixture) =>
+    f.winner === null && (f.matchId === null || zeroEventIdx.has(f.index));
+  const canReorder = (f: Fixture) => f.matchId === null && f.winner === null;
   const per = (f: Fixture) => (f.kind === 'DOUBLE' ? 2 : 1);
 
   const setSlot = (index: number, side: 'a' | 'b', slot: number, value: string) => {
@@ -57,7 +84,7 @@ export function EncounterConfig({
       const target = pos + dir;
       const a = prev[pos];
       const b = prev[target];
-      if (!a || !b || !editable(a) || !editable(b)) return prev;
+      if (!a || !b || !canReorder(a) || !canReorder(b)) return prev;
       const next = [...prev];
       next[pos] = b;
       next[target] = a;
@@ -72,7 +99,24 @@ export function EncounterConfig({
       plan: { ...encounter.plan, settings, fixtures },
     };
     await persistEncounter(updated);
+    // Keep linked data in sync: rebuild the config of launched-but-unscored
+    // fixtures so edited participants apply to the actual match too.
+    for (const f of updated.plan.fixtures) {
+      if (f.matchId && zeroEventIdx.has(f.index)) {
+        const m = await loadMatch(f.matchId);
+        if (m && m.events.length === 0) {
+          const config = fixtureMatchConfig(updated, f);
+          await persistMatch({
+            ...m,
+            config,
+            mode: config.mode,
+            variant: config.variant,
+          });
+        }
+      }
+    }
     onUpdated(updated);
+    setBusy(false);
     onClose();
   };
 
@@ -136,31 +180,33 @@ export function EncounterConfig({
         {/* fixtures */}
         <div className="flex flex-col gap-2">
           {fixtures.map((f, pos) => {
-            const locked = !editable(f);
+            const editP = canEditPlayers(f);
+            const reord = canReorder(f);
             const prev = fixtures[pos - 1];
             const nextF = fixtures[pos + 1];
-            const canUp = !locked && !!prev && editable(prev);
-            const canDown = !locked && !!nextF && editable(nextF);
+            const canUp = reord && !!prev && canReorder(prev);
+            const canDown = reord && !!nextF && canReorder(nextF);
+            const lockLabel = f.winner ? 'played' : !editP ? 'in progress' : null;
             return (
               <div
                 key={f.index}
                 className={cn(
                   'rounded-xl border p-2.5',
-                  locked
-                    ? 'border-[var(--color-border)] bg-[var(--color-surface-2)] opacity-60'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)]',
+                  editP
+                    ? 'border-[var(--color-border)] bg-[var(--color-surface)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface-2)] opacity-60',
                 )}
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wide text-[var(--color-accent)]">
                     Match {pos + 1} · {f.kind === 'DOUBLE' ? 'Double' : 'Single'}
-                    {locked && (
+                    {lockLabel && (
                       <span className="ml-2 text-[var(--color-text-mute)]">
-                        🔒 {f.winner ? 'played' : 'in progress'}
+                        🔒 {lockLabel}
                       </span>
                     )}
                   </span>
-                  {!locked && (
+                  {reord && (
                     <span className="flex gap-1">
                       <MiniBtn disabled={!canUp} onClick={() => move(pos, -1)}>
                         ▲
@@ -173,14 +219,14 @@ export function EncounterConfig({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Slots
-                    disabled={locked}
+                    disabled={!editP}
                     players={teams.A.players}
                     values={f.aPlayerIds}
                     count={per(f)}
                     onChange={(slot, v) => setSlot(f.index, 'a', slot, v)}
                   />
                   <Slots
-                    disabled={locked}
+                    disabled={!editP}
                     players={teams.B.players}
                     values={f.bPlayerIds}
                     count={per(f)}

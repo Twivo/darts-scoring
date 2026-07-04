@@ -22,7 +22,11 @@ export interface PlayerRecord {
   createdAt?: string;
 }
 
-export type MatchStatus = 'IN_PROGRESS' | 'GAME_OVER' | 'ABANDONED';
+export type MatchStatus =
+  | 'SCHEDULED' // created but not started (no scoring page reached yet)
+  | 'IN_PROGRESS'
+  | 'GAME_OVER'
+  | 'ABANDONED';
 
 export interface MatchRecord {
   id: string;

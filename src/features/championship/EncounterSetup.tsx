@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
@@ -7,6 +7,10 @@ import type { TeamWithPlayers } from '@/data/types';
 import { useRoster } from '@/store/RosterContext';
 import { createEncounter, persistEncounter } from '@/store/encounterService';
 import type { TeamSnapshot } from '@/domain/championship/types';
+
+function isJedisTeam(team: TeamWithPlayers) {
+  return team.name.trim().toLowerCase().includes('jedis');
+}
 
 export function EncounterSetup() {
   const navigate = useNavigate();
@@ -18,6 +22,7 @@ export function EncounterSetup() {
   const [teamBId, setTeamBId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const autoSelectedHome = useRef(false);
 
   useEffect(() => {
     void repo
@@ -25,6 +30,21 @@ export function EncounterSetup() {
       .then(setTeams)
       .catch(() => setTeams([]));
   }, [repo]);
+
+  useEffect(() => {
+    if (autoSelectedHome.current || teamAId || teams.length === 0) return;
+    const jedis = teams.find(isJedisTeam);
+    if (!jedis) return;
+
+    autoSelectedHome.current = true;
+    setTeamAId(jedis.id);
+    if (teamBId === jedis.id) setTeamBId('');
+  }, [teamAId, teamBId, teams]);
+
+  const jediTeamId = useMemo(
+    () => teams.find(isJedisTeam)?.id ?? '',
+    [teams],
+  );
 
   const snapshot = (t: TeamWithPlayers): TeamSnapshot => ({
     id: t.id,
@@ -83,20 +103,23 @@ export function EncounterSetup() {
       </p>
 
       <TeamPicker
-        label="Team A"
+        label="Home team"
         teams={teams}
         value={teamAId}
         exclude={teamBId}
+        featuredId={jediTeamId}
+        preferFeatured
         onChange={setTeamAId}
       />
       <div className="my-3 text-center text-sm font-bold text-[var(--color-text-dim)]">
         vs
       </div>
       <TeamPicker
-        label="Team B"
+        label="Opponent"
         teams={teams}
         value={teamBId}
         exclude={teamAId}
+        featuredId={jediTeamId}
         onChange={setTeamBId}
       />
 
@@ -135,43 +158,81 @@ function TeamPicker({
   teams,
   value,
   exclude,
+  featuredId,
+  preferFeatured = false,
   onChange,
 }: {
   label: string;
   teams: TeamWithPlayers[];
   value: string;
   exclude: string;
+  featuredId?: string;
+  preferFeatured?: boolean;
   onChange: (id: string) => void;
 }) {
+  const orderedTeams = [...teams].sort((a, b) => {
+    const aFeatured = a.id === featuredId;
+    const bFeatured = b.id === featuredId;
+    if (aFeatured !== bFeatured) {
+      if (preferFeatured) return aFeatured ? -1 : 1;
+      return aFeatured ? 1 : -1;
+    }
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <div>
       <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
         {label}
       </h2>
       <div className="flex flex-col gap-2">
-        {teams.map((t) => (
-          <button
-            key={t.id}
-            disabled={t.id === exclude}
-            onClick={() => onChange(t.id)}
-            className={cn(
-              'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all disabled:opacity-30',
-              value === t.id
-                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
-                : 'border-[var(--color-border)] bg-[var(--color-surface)]',
-            )}
-          >
-            <span className="font-semibold">{t.name}</span>
-            <span
+        {orderedTeams.map((t) => {
+          const featured = t.id === featuredId;
+          const selected = value === t.id;
+          const subdued =
+            !selected && !!featuredId && (preferFeatured ? !featured : featured);
+
+          return (
+            <button
+              key={t.id}
+              disabled={t.id === exclude}
+              onClick={() => onChange(t.id)}
               className={cn(
-                'text-xs',
-                value === t.id ? 'text-white/80' : 'text-[var(--color-text-dim)]',
+                'flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all disabled:opacity-30',
+                selected
+                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
+                  : featured && preferFeatured
+                    ? 'border-[var(--color-accent)] bg-[var(--color-surface-2)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)]',
+                subdued && 'opacity-70',
               )}
             >
-              {t.playerIds.length} players
-            </span>
-          </button>
-        ))}
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate font-semibold">{t.name}</span>
+                {featured && (
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                      selected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]',
+                    )}
+                  >
+                    Home
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 text-xs',
+                  selected ? 'text-white/80' : 'text-[var(--color-text-dim)]',
+                )}
+              >
+                {t.playerIds.length} players
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

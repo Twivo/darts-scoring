@@ -46,9 +46,9 @@ export function StatsScreen() {
     const text =
       `🎯 ${winnerLabel} wins ${legs.join('–')}!\n` +
       `${sides.join(' vs ')} · ${config.variant} Double Out\n` +
-      `3-dart avg ${avgs.join(' vs ')} · via DartsScore`;
+      `3-dart avg ${avgs.join(' vs ')} · via GenevaDartsConnect`;
     return {
-      title: 'DartsScore result',
+      title: 'GenevaDartsConnect result',
       text,
       url: window.location.href.split('#')[0],
     };

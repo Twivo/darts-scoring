@@ -24,17 +24,24 @@ export function FixtureComposer({
   const per = block.kind === 'DOUBLE' ? 2 : 1;
 
   const initial = useMemo<Comp[]>(() => {
+    // Do not pre-fill automatically. Exception: propose the singles pairings —
+    // the first singles round by position (A-A, B-B, C-C, D-D) and the last one
+    // rotated (A-B, B-A, C-D, D-C). Doubles are left empty. All stay editable.
+    const isDouble = block.kind === 'DOUBLE';
+    const lastSingles = !isDouble && block.start > 0;
     const comps: Comp[] = [];
     for (let i = block.start; i < block.end; i++) {
-      const posInBlock = i - block.start;
-      const base = posInBlock * per;
-      const a: string[] = [];
-      const b: string[] = [];
-      for (let k = 0; k < per; k++) {
-        a.push(teams.A.players[base + k]?.id ?? teams.A.players[k]?.id ?? '');
-        b.push(teams.B.players[base + k]?.id ?? teams.B.players[k]?.id ?? '');
+      const pos = i - block.start;
+      if (isDouble) {
+        comps.push({ index: i, a: Array(per).fill(''), b: Array(per).fill('') });
+      } else {
+        const bPos = lastSingles ? pos ^ 1 : pos;
+        comps.push({
+          index: i,
+          a: [teams.A.players[pos]?.id ?? ''],
+          b: [teams.B.players[bPos]?.id ?? ''],
+        });
       }
-      comps.push({ index: i, a, b });
     }
     return comps;
   }, [block, per, teams]);

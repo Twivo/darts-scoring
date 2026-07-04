@@ -59,25 +59,26 @@ export function SetupScreen() {
   const [policy, setPolicy] = useState<'BULL' | 'MANUAL'>('MANUAL');
   const [manualStarter, setManualStarter] = useState<Side>('A');
   const [bullOpen, setBullOpen] = useState(false);
+  const [picker, setPicker] = useState<Side | null>(null);
+  const [query, setQuery] = useState('');
 
   const perSide = mode === 'SINGLE' ? 1 : 2;
   const teamA = players.filter((p) => assign[p.id] === 'A');
   const teamB = players.filter((p) => assign[p.id] === 'B');
 
-  const cycle = (id: string) => {
-    setAssign((prev) => {
-      const cur = prev[id];
-      const next: Side | undefined =
-        cur === undefined ? 'A' : cur === 'A' ? 'B' : undefined;
-      if (next === 'A' && teamA.length >= perSide) {
-        return { ...prev, [id]: 'B' };
-      }
-      if (next === 'B' && teamB.length >= perSide) {
-        return { ...prev, [id]: undefined };
-      }
-      return { ...prev, [id]: next };
-    });
+  const add = (side: Side, id: string) => {
+    setAssign((prev) => ({ ...prev, [id]: side }));
+    setPicker(null);
+    setQuery('');
   };
+  const remove = (id: string) =>
+    setAssign((prev) => ({ ...prev, [id]: undefined }));
+  // Players available to add: not already picked, matching the live search.
+  const available = players.filter(
+    (p) =>
+      !assign[p.id] &&
+      p.name.toLowerCase().includes(query.trim().toLowerCase()),
+  );
 
   const valid = teamA.length === perSide && teamB.length === perSide;
 
@@ -86,8 +87,8 @@ export function SetupScreen() {
       return `You need at least ${perSide * 2} players (add some under "Players").`;
     if (!valid)
       return mode === 'DOUBLE'
-        ? `Select ${perSide} players per team (tap to cycle A → B → off).`
-        : `Select 2 players (tap to select, tap again to remove).`;
+        ? `Add ${perSide} players to each team.`
+        : `Add a player to each side.`;
     return null;
   }, [players.length, perSide, valid, mode]);
 
@@ -226,51 +227,61 @@ export function SetupScreen() {
         </section>
 
         <section>
-          <SectionTitle>
-            {mode === 'DOUBLE'
-              ? `Players — Team A (${teamA.length}/${perSide}) · Team B (${teamB.length}/${perSide})`
-              : `Players — select 2 (${teamA.length + teamB.length}/2)`}
-          </SectionTitle>
-          <ul className="flex flex-col gap-2">
-            {players.map((p) => {
-              const side = assign[p.id];
+          <SectionTitle>Players</SectionTitle>
+          <div className="grid grid-cols-2 gap-3">
+            {(['A', 'B'] as Side[]).map((side) => {
+              const members = side === 'A' ? teamA : teamB;
+              const full = members.length >= perSide;
+              const label =
+                mode === 'DOUBLE'
+                  ? `Team ${side}`
+                  : `Player ${side === 'A' ? 1 : 2}`;
               return (
-                <li key={p.id}>
-                  <button
-                    onClick={() => cycle(p.id)}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-xl border px-4 py-4 transition-all active:scale-[0.99]',
-                      side
-                        ? 'border-[var(--color-accent)] bg-[var(--color-surface-2)]'
-                        : 'border-[var(--color-border)] bg-[var(--color-surface)]',
-                    )}
-                  >
-                    <span className="flex items-center gap-3 text-lg">
-                      <span
-                        className="h-3 w-3 rounded-full"
-                        style={{ background: p.color ?? '#666' }}
-                      />
-                      {p.name}
-                    </span>
-                    {side && (
-                      <span
-                        className={cn(
-                          'rounded-lg px-3 py-1 text-sm font-bold',
-                          side === 'A'
-                            ? 'bg-[var(--color-accent)] text-white'
-                            : 'bg-white text-black',
-                        )}
+                <div
+                  key={side}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+                >
+                  <div className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--color-text-dim)]">
+                    {label} ({members.length}/{perSide})
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {members.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-[var(--color-surface-2)] px-3 py-2"
                       >
-                        {mode === 'DOUBLE'
-                          ? `Team ${side}`
-                          : `Player ${side === 'A' ? 1 : 2}`}
-                      </span>
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-full"
+                            style={{ background: p.color ?? '#666' }}
+                          />
+                          <span className="truncate">{p.name}</span>
+                        </span>
+                        <button
+                          onClick={() => remove(p.id)}
+                          className="shrink-0 text-[var(--color-text-dim)] hover:text-[var(--color-accent)]"
+                          aria-label="Remove player"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {!full && (
+                      <button
+                        onClick={() => {
+                          setPicker(side);
+                          setQuery('');
+                        }}
+                        className="rounded-lg border border-dashed border-[var(--color-border)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
+                      >
+                        + Add player
+                      </button>
                     )}
-                  </button>
-                </li>
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </section>
 
         <section>
@@ -360,6 +371,42 @@ export function SetupScreen() {
             Cancel
           </Button>
         </div>
+      </Modal>
+
+      <Modal
+        open={picker !== null}
+        onClose={() => setPicker(null)}
+        title="Add a player"
+      >
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search players…"
+          className="mb-3 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+        />
+        <ul className="flex max-h-[50vh] flex-col gap-1 overflow-y-auto">
+          {available.length === 0 ? (
+            <li className="py-6 text-center text-sm text-[var(--color-text-dim)]">
+              No player found.
+            </li>
+          ) : (
+            available.map((p) => (
+              <li key={p.id}>
+                <button
+                  onClick={() => picker && add(picker, p.id)}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--color-surface-2)]"
+                >
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ background: p.color ?? '#666' }}
+                  />
+                  <span className="truncate">{p.name}</span>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
       </Modal>
     </div>
   );

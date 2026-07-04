@@ -140,7 +140,10 @@ export async function launchFixture(
     events: [],
     mode: config.mode,
     variant: config.variant,
-    status: 'IN_PROGRESS',
+    // Created but NOT started: it becomes IN_PROGRESS only when the scoring
+    // page is reached (GameProvider's auto-save flips it). Until then it stays
+    // out of Resume / Watch Live / active-match checks.
+    status: 'SCHEDULED',
     encounterId: encounter.id,
     fixtureIndex: fixture.index,
   });

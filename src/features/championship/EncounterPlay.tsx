@@ -24,6 +24,9 @@ export function EncounterPlay({
   const [match, setMatch] = useState<MatchRecord | null>(null);
 
   // Resume: if the match was already launched, load it and skip the bull screen.
+  // Reload it too when the fixture's players change (edited from Configure while
+  // no visit has been recorded) so the scoring screen reflects the new lineup.
+  const compKey = `${fixture.aPlayerIds.join(',')}|${fixture.bPlayerIds.join(',')}`;
   useEffect(() => {
     let alive = true;
     if (fixture.matchId) {
@@ -34,7 +37,7 @@ export function EncounterPlay({
     return () => {
       alive = false;
     };
-  }, [fixture.matchId]);
+  }, [fixture.matchId, compKey]);
 
   const startMatch = async (v: {
     aOrder: string[];
@@ -87,6 +90,7 @@ export function EncounterPlay({
 
   return (
     <GameProvider
+      key={match.config.participants.map((p) => p.playerIds.join('-')).join('|')}
       matchId={match.id}
       seasonId={encounter.seasonId}
       config={match.config}

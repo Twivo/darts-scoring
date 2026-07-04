@@ -8,6 +8,16 @@ import { cn } from '@/lib/cn';
 import { MatchDetail } from './MatchDetail';
 import type { MatchRecord, Season } from '@/data/types';
 
+type TrendPoint = {
+  key: string;
+  matchNo: number;
+  average: number;
+  dateLabel: string;
+  opponent: string;
+  result: 'W' | 'L';
+  score: string;
+};
+
 /**
  * Player profile: career overview, per-match average trend, personal records,
  * match history, and head-to-head against any opponent. Championship matches
@@ -111,7 +121,17 @@ export function PlayerProfile() {
     return { mine, name, per, overall, bestMatchAvg, most180Match, opponents };
   }, [matches, id]);
 
-  const trend = data.per.filter((p) => p.decided).map((p) => p.myAvg);
+  const trend: TrendPoint[] = data.per
+    .filter((p) => p.decided)
+    .map((p, index) => ({
+      key: p.m.id,
+      matchNo: index + 1,
+      average: p.myAvg,
+      dateLabel: p.date ? new Date(p.date).toLocaleDateString() : '-',
+      opponent: participantDisplay(p.m.config, p.oppSideId),
+      result: p.won ? 'W' : 'L',
+      score: `${p.myLegs}-${p.oppLegs}`,
+    }));
 
   // head-to-head vs the selected opponent
   const h2h = useMemo(() => {
@@ -222,7 +242,7 @@ export function PlayerProfile() {
 
           {/* average trend */}
           <Section title="Average over time (per match)">
-            <Sparkline values={trend} />
+            <AverageTrend points={trend} />
           </Section>
 
           {/* personal records */}
@@ -407,47 +427,179 @@ function ResultBadge({ result }: { result: 'W' | 'L' | '…' }) {
   );
 }
 
-/** Minimal dependency-free SVG line chart of a value series. */
-function Sparkline({ values }: { values: number[] }) {
-  if (values.length < 2) {
+/** Dependency-free SVG line chart with readable labels and recent match context. */
+function AverageTrend({ points }: { points: TrendPoint[] }) {
+  if (points.length < 2) {
     return (
       <p className="rounded-xl border border-dashed border-[var(--color-border)] p-4 text-center text-xs text-[var(--color-text-dim)]">
         Not enough finished matches for a trend yet.
       </p>
     );
   }
-  const w = 600;
-  const h = 64;
-  const pad = 6;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+
+  const w = 640;
+  const h = 190;
+  const margin = { top: 22, right: 26, bottom: 34, left: 50 };
+  const rawMin = Math.min(...points.map((p) => p.average));
+  const rawMax = Math.max(...points.map((p) => p.average));
+  const spread = Math.max(5, rawMax - rawMin);
+  const min = Math.max(0, Math.floor((rawMin - spread * 0.18) / 5) * 5);
+  const max = Math.ceil((rawMax + spread * 0.18) / 5) * 5;
   const range = max - min || 1;
-  const x = (i: number) => pad + (i / (values.length - 1)) * (w - 2 * pad);
-  const y = (v: number) => pad + (1 - (v - min) / range) * (h - 2 * pad);
-  const points = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-  const last = values.length - 1;
+  const plotW = w - margin.left - margin.right;
+  const plotH = h - margin.top - margin.bottom;
+  const x = (i: number) =>
+    margin.left + (i / (points.length - 1)) * plotW;
+  const y = (v: number) =>
+    margin.top + (1 - (v - min) / range) * plotH;
+  const path = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.average).toFixed(1)}`)
+    .join(' ');
+  const best = points.reduce((top, p) => (p.average > top.average ? p : top));
+  const latest = points[points.length - 1]!;
+  const gridValues = [max, (max + min) / 2, min];
+  const tickEvery = Math.max(1, Math.ceil(points.length / 6));
+  const recent = [...points].slice(-5).reverse();
+
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-      <div className="flex items-center justify-between text-[11px] text-[var(--color-text-dim)]">
-        <span>max {max.toFixed(1)}</span>
-        <span>{values.length} matches</span>
-        <span>min {min.toFixed(1)}</span>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-dim)]">
+          <span className="h-2.5 w-6 rounded-full bg-[var(--color-accent)]" />
+          <span>3-dart average per match</span>
+        </div>
+        <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-[var(--color-text-dim)]">
+          <span>Best {best.average.toFixed(1)}</span>
+          <span>Latest {latest.average.toFixed(1)}</span>
+          <span>{points.length} matches</span>
+        </div>
       </div>
       <svg
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
-        className="mt-1 w-full"
-        style={{ height: 64 }}
+        className="h-52 w-full overflow-visible"
+        role="img"
+        aria-label="3-dart average trend by match"
       >
-        <polyline
-          points={points}
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth="2"
+        {gridValues.map((value) => (
+          <g key={value}>
+            <line
+              x1={margin.left}
+              y1={y(value)}
+              x2={w - margin.right}
+              y2={y(value)}
+              stroke="var(--color-border)"
+              strokeDasharray="4 6"
+              vectorEffect="non-scaling-stroke"
+            />
+            <text
+              x={margin.left - 8}
+              y={y(value) + 4}
+              textAnchor="end"
+              fontSize="11"
+              fill="var(--color-text-dim)"
+            >
+              {value.toFixed(0)}
+            </text>
+          </g>
+        ))}
+        <line
+          x1={margin.left}
+          y1={h - margin.bottom}
+          x2={w - margin.right}
+          y2={h - margin.bottom}
+          stroke="var(--color-border-strong)"
           vectorEffect="non-scaling-stroke"
         />
-        <circle cx={x(last)} cy={y(values[last]!)} r="3" fill="var(--color-accent)" />
+        <path
+          d={path}
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth="3"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        {points.map((p, i) => {
+          const cx = x(i);
+          const cy = y(p.average);
+          const labelAbove = cy > margin.top + 18;
+          const showLabel =
+            points.length <= 10 || i === points.length - 1 || p.key === best.key;
+
+          return (
+            <g key={p.key}>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={p.key === latest.key || p.key === best.key ? 4.5 : 3.5}
+                fill={p.result === 'W' ? 'var(--color-success)' : 'var(--color-accent)'}
+                stroke="var(--color-surface)"
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+              />
+              {showLabel && (
+                <text
+                  x={cx}
+                  y={cy + (labelAbove ? -9 : 16)}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="700"
+                  fill="var(--color-text)"
+                >
+                  {p.average.toFixed(1)}
+                </text>
+              )}
+              {(i % tickEvery === 0 || i === points.length - 1) && (
+                <text
+                  x={cx}
+                  y={h - 10}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="var(--color-text-dim)"
+                >
+                  #{p.matchNo}
+                </text>
+              )}
+              <title>
+                {p.dateLabel} vs {p.opponent}: {p.average.toFixed(1)} avg, {p.result}{' '}
+                {p.score}
+              </title>
+            </g>
+          );
+        })}
       </svg>
+
+      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
+          Recent matches
+        </div>
+        <ul className="grid gap-1.5 sm:grid-cols-2">
+          {recent.map((p) => (
+            <li
+              key={p.key}
+              className="flex min-w-0 items-center gap-2 rounded-lg bg-[var(--color-surface-2)] px-2.5 py-2 text-xs"
+            >
+              <span
+                className={cn(
+                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-black',
+                  p.result === 'W'
+                    ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]'
+                    : 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]',
+                )}
+              >
+                {p.result}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[var(--color-text-dim)]">
+                #{p.matchNo} {p.dateLabel} vs {p.opponent}
+              </span>
+              <span className="shrink-0 font-black text-[var(--color-text)] tnum">
+                {p.average.toFixed(1)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
