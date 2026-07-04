@@ -10,6 +10,7 @@ import { PlayerProfile } from './features/admin/PlayerProfile';
 import { AdminTeams } from './features/admin/AdminTeams';
 import { AdminDashboard } from './features/admin/AdminDashboard';
 import { AdminChampionship } from './features/admin/AdminChampionship';
+import { SeasonReview } from './features/admin/SeasonReview';
 import { RequireAuth } from './features/admin/RequireAuth';
 import { EncounterSetup } from './features/championship/EncounterSetup';
 import { ChampionshipRoute } from './features/championship/ChampionshipRoute';
@@ -52,6 +53,7 @@ export function App() {
           <Route path="teams" element={<AdminTeams />} />
           <Route path="stats" element={<AdminDashboard />} />
           <Route path="championship" element={<AdminChampionship />} />
+          <Route path="review" element={<SeasonReview />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

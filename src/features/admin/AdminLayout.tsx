@@ -12,6 +12,7 @@ const NAV = [
   { to: '/admin/teams', label: 'Teams' },
   { to: '/admin/stats', label: 'Statistics' },
   { to: '/admin/championship', label: 'Championship' },
+  { to: '/admin/review', label: 'Season review' },
 ];
 
 export function AdminLayout() {

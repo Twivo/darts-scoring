@@ -152,6 +152,20 @@ export function AdminDashboard() {
     }
   };
 
+  // Export the current (filtered/sorted) stats table to an Excel file.
+  // xlsx is imported lazily so it never weighs on the initial bundle.
+  const exportXlsx = async () => {
+    const XLSX = await import('xlsx');
+    const header = ['Player', ...COLUMNS.map((c) => c.label)];
+    const rows = displayed.map((r) => [r.name, ...COLUMNS.map((c) => c.fmt(r))]);
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Championship stats');
+    const season =
+      seasons.find((s) => s.id === seasonId)?.name?.replace(/\//g, '-') ?? 'season';
+    XLSX.writeFile(wb, `darts-stats-${season}.xlsx`);
+  };
+
   // Per-player match history (shown when a single player is selected).
   const history = useMemo(() => {
     if (playerFilter === 'ALL') return [];
@@ -245,9 +259,18 @@ export function AdminDashboard() {
             />
           </>
         )}
-        <span className="ml-auto text-[var(--color-text-dim)]">
-          {matches.length} matches · {rows.length} players
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[var(--color-text-dim)]">
+            {matches.length} matches · {rows.length} players
+          </span>
+          <button
+            onClick={() => void exportXlsx()}
+            disabled={displayed.length === 0}
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold hover:border-[var(--color-accent)] disabled:opacity-50"
+          >
+            ⬇ Excel
+          </button>
+        </div>
       </div>
 
       {loading ? (

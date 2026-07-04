@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
-import { cn } from '@/lib/cn';
 import { getRepository } from '@/data';
 import type { TeamWithPlayers } from '@/data/types';
 import { useRoster } from '@/store/RosterContext';
@@ -58,11 +57,25 @@ export function AdminTeams() {
   const playerName = (id: string) =>
     players.find((p) => p.id === id)?.name ?? '???';
 
-  const toggleMember = (team: TeamWithPlayers, playerId: string) => {
-    const next = team.playerIds.includes(playerId)
-      ? team.playerIds.filter((id) => id !== playerId)
-      : [...team.playerIds, playerId];
-    void run(() => repo.setTeamPlayers(team.id, next));
+  // A player can belong to only one team: anyone already on a team (this one or
+  // another) is not offered in the "add" dropdown.
+  const taken = useMemo(() => {
+    const set = new Set<string>();
+    for (const tm of teams) for (const pid of tm.playerIds) set.add(pid);
+    return set;
+  }, [teams]);
+
+  const addMember = (team: TeamWithPlayers, playerId: string) => {
+    if (!playerId) return;
+    void run(() => repo.setTeamPlayers(team.id, [...team.playerIds, playerId]));
+  };
+  const removeMember = (team: TeamWithPlayers, playerId: string) => {
+    void run(() =>
+      repo.setTeamPlayers(
+        team.id,
+        team.playerIds.filter((id) => id !== playerId),
+      ),
+    );
   };
 
   return (
@@ -182,36 +195,52 @@ export function AdminTeams() {
 
                 {expanded && (
                   <div className="border-t border-[var(--color-border)] p-3">
-                    {t.playerIds.length > 0 && (
-                      <p className="mb-2 text-xs text-[var(--color-text-dim)]">
-                        Members: {t.playerIds.map(playerName).join(', ')}
+                    {/* current members (removable) */}
+                    {t.playerIds.length > 0 ? (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {t.playerIds.map((pid) => (
+                          <span
+                            key={pid}
+                            className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-accent)] px-3 py-1.5 text-sm text-white"
+                          >
+                            {playerName(pid)}
+                            <button
+                              disabled={busy}
+                              onClick={() => removeMember(t, pid)}
+                              className="text-white/80 hover:text-white"
+                              aria-label="Remove player"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mb-3 text-xs text-[var(--color-text-dim)]">
+                        No members yet.
                       </p>
                     )}
-                    <div className="flex flex-wrap gap-2">
-                      {players.length === 0 && (
-                        <span className="text-sm text-[var(--color-text-dim)]">
-                          No players — add some under “Players”.
-                        </span>
-                      )}
-                      {players.map((p) => {
-                        const member = t.playerIds.includes(p.id);
-                        return (
-                          <button
-                            key={p.id}
-                            disabled={busy}
-                            onClick={() => toggleMember(t, p.id)}
-                            className={cn(
-                              'rounded-lg border px-3 py-1.5 text-sm transition-colors',
-                              member
-                                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
-                                : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text-dim)]',
-                            )}
-                          >
-                            {member ? '✓ ' : '+ '}
-                            {p.name}
-                          </button>
-                        );
-                      })}
+
+                    {/* add via dropdown — only players not on any team */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value=""
+                        disabled={busy}
+                        onChange={(e) => addMember(t, e.target.value)}
+                        className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                      >
+                        <option value="">+ Add a player…</option>
+                        {players
+                          .filter((p) => !taken.has(p.id))
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                      </select>
+                      <span className="text-xs text-[var(--color-text-mute)]">
+                        A player can be on one team only.
+                      </span>
                     </div>
                   </div>
                 )}
