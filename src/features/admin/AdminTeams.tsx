@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import { getRepository } from '@/data';
 import type { TeamWithPlayers } from '@/data/types';
@@ -20,6 +21,8 @@ export function AdminTeams() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [memberPickerTeamId, setMemberPickerTeamId] = useState<string | null>(null);
+  const [memberQuery, setMemberQuery] = useState('');
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(async () => {
@@ -59,17 +62,36 @@ export function AdminTeams() {
   const playerName = (id: string) =>
     players.find((p) => p.id === id)?.name ?? '???';
 
-  // A player can belong to only one team: anyone already on a team (this one or
-  // another) is not offered in the "add" dropdown.
+  // A player can belong to only one team: anyone already on a team is not
+  // offered in the add-player dialog.
   const taken = useMemo(() => {
     const set = new Set<string>();
     for (const tm of teams) for (const pid of tm.playerIds) set.add(pid);
     return set;
   }, [teams]);
 
+  const memberPickerTeam = teams.find((t) => t.id === memberPickerTeamId) ?? null;
+  const addablePlayers = useMemo(() => {
+    const q = memberQuery.trim().toLowerCase();
+    return players
+      .filter((p) => !taken.has(p.id))
+      .filter((p) => !q || p.name.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [players, taken, memberQuery]);
+
+  const openMemberPicker = (teamId: string) => {
+    setMemberPickerTeamId(teamId);
+    setMemberQuery('');
+  };
+  const closeMemberPicker = () => {
+    setMemberPickerTeamId(null);
+    setMemberQuery('');
+  };
+
   const addMember = (team: TeamWithPlayers, playerId: string) => {
     if (!playerId) return;
     void run(() => repo.setTeamPlayers(team.id, [...team.playerIds, playerId]));
+    closeMemberPicker();
   };
   const removeMember = (team: TeamWithPlayers, playerId: string) => {
     void run(() =>
@@ -223,23 +245,15 @@ export function AdminTeams() {
                       </p>
                     )}
 
-                    {/* add via dropdown — only players not on any team */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <select
-                        value=""
+                      <Button
+                        variant="surface"
+                        size="sm"
                         disabled={busy}
-                        onChange={(e) => addMember(t, e.target.value)}
-                        className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                        onClick={() => openMemberPicker(t.id)}
                       >
-                        <option value="">{tr('admin.addAPlayer')}</option>
-                        {players
-                          .filter((p) => !taken.has(p.id))
-                          .map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                      </select>
+                        {tr('admin.addPlayer')}
+                      </Button>
                       <span className="text-xs text-[var(--color-text-mute)]">
                         {tr('admin.oneTeamOnly')}
                       </span>
@@ -251,6 +265,43 @@ export function AdminTeams() {
           })}
         </ul>
       )}
+
+      <Modal
+        open={memberPickerTeam !== null}
+        onClose={closeMemberPicker}
+        title={memberPickerTeam ? `${tr('admin.addPlayer')} — ${memberPickerTeam.name}` : tr('admin.addPlayer')}
+      >
+        <input
+          autoFocus
+          value={memberQuery}
+          onChange={(e) => setMemberQuery(e.target.value)}
+          placeholder={tr('setup.searchPlayers')}
+          className="mb-3 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
+        />
+        <ul className="flex max-h-[50vh] flex-col gap-1 overflow-y-auto">
+          {addablePlayers.length === 0 ? (
+            <li className="py-6 text-center text-sm text-[var(--color-text-dim)]">
+              {tr('setup.noPlayerFound')}
+            </li>
+          ) : (
+            addablePlayers.map((p) => (
+              <li key={p.id}>
+                <button
+                  disabled={busy || !memberPickerTeam}
+                  onClick={() => memberPickerTeam && addMember(memberPickerTeam, p.id)}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+                >
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ background: p.color ?? '#666' }}
+                  />
+                  <span className="truncate">{p.name}</span>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      </Modal>
     </div>
   );
 }
