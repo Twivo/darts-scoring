@@ -36,6 +36,48 @@ const DICT: Record<string, { en: string; fr: string }> = {
   },
   'home.match': { en: 'match', fr: 'match' },
   'home.syncing': { en: 'Syncing…', fr: 'Synchronisation…' },
+  'home.celebrationRulesButton': { en: 'Very official rules', fr: 'Règlement anti-rabat-joie' },
+  'home.celebrationRulesTitle': { en: 'The anti-killjoy rulebook', fr: 'Le règlement anti-rabat-joie' },
+  'home.celebrationRule.1': {
+    en: 'If you hit a nice checkout, celebrate. If someone sighs, do it again, slower.',
+    fr: 'Si tu fais un beau checkout, tu célèbres. Si quelqu’un soupire, tu recommences plus lentement.',
+  },
+  'home.celebrationRule.2': {
+    en: 'A quietly announced 180 only counts halfway. The whole room needs to know.',
+    fr: 'Un 180 annoncé calmement ne compte qu’à moitié. Il faut que la salle soit au courant.',
+  },
+  'home.celebrationRule.3': {
+    en: 'Any “come on, enough” automatically adds five seconds of celebration.',
+    fr: 'Toute phrase du style “ça va, c’est bon” ajoute automatiquement 5 secondes de célébration.',
+  },
+  'home.celebrationRule.4': {
+    en: 'If someone says “we’re not on TV”, immediately play like it is the world final.',
+    fr: 'Si quelqu’un dit “on n’est pas à la télé”, il faut immédiatement jouer comme si on était en finale mondiale.',
+  },
+  'home.celebrationRule.5': {
+    en: 'A double 1 that goes in deserves the same respect as a 170. Sometimes more, because there was pain.',
+    fr: 'Un double 1 qui rentre mérite autant de respect qu’un 170. Parfois plus, parce qu’il y avait de la souffrance.',
+  },
+  'home.celebrationRule.6': {
+    en: 'The player pretending not to watch the celebration is officially the main audience.',
+    fr: 'Le joueur qui fait semblant de ne pas regarder la célébration est officiellement le public principal.',
+  },
+  'home.celebrationRule.7': {
+    en: 'An ugly checkout is celebrated too. Beauty is a social construct.',
+    fr: 'Un check dégueulasse, ça se fête aussi. La beauté est une construction sociale.',
+  },
+  'home.celebrationRule.8': {
+    en: 'If your opponent rolls their eyes, they saw it. Mission accomplished.',
+    fr: 'Si ton adversaire lève les yeux au ciel, c’est qu’il a vu. Mission accomplie.',
+  },
+  'home.celebrationRule.9': {
+    en: 'A forced “well played” is accepted, but it must come with a devastated look.',
+    fr: 'Le “bien joué” forcé est accepté, mais il doit être accompagné d’un regard détruit.',
+  },
+  'home.celebrationRule.10': {
+    en: 'Any criticized celebration may be replayed in the extended version next leg.',
+    fr: 'Toute célébration critiquée pourra être rejouée en version longue au prochain leg.',
+  },
   'common.home': { en: '← Home', fr: '← Accueil' },
   'common.back': { en: '← Back', fr: '← Retour' },
   'common.backToApp': { en: '← Back to app', fr: "← Retour à l'application" },

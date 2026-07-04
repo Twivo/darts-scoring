@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { QrCode } from '@/components/QrCode';
 import { buildGameState } from '@/domain/engine';
 import { listResumable } from '@/store/matchService';
@@ -10,6 +11,11 @@ import { useT, LangToggle } from '@/store/LangContext';
 import { participantLabel } from '@/domain/presentation';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 
+const CELEBRATION_RULE_KEYS = Array.from(
+  { length: 10 },
+  (_, i) => `home.celebrationRule.${i + 1}`,
+);
+
 export function HomeScreen() {
   const navigate = useNavigate();
   const { t } = useT();
@@ -17,6 +23,7 @@ export function HomeScreen() {
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [liveCount, setLiveCount] = useState(0);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const liveUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#/live`;
 
   useEffect(() => {
@@ -184,9 +191,42 @@ export function HomeScreen() {
         </div>
       </div>
 
+      <button
+        onClick={() => setRulesOpen(true)}
+        className="-mt-7 rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--color-text-mute)] underline-offset-4 hover:text-[var(--color-accent)] hover:underline"
+      >
+        {t('home.celebrationRulesButton')}
+      </button>
+
       {!loaded && (
         <p className="text-xs text-[var(--color-text-mute)]">{t('home.syncing')}</p>
       )}
+
+      <Modal
+        open={rulesOpen}
+        onClose={() => setRulesOpen(false)}
+        title={t('home.celebrationRulesTitle')}
+      >
+        <ol className="space-y-3 text-sm leading-relaxed text-[var(--color-text-dim)]">
+          {CELEBRATION_RULE_KEYS.map((key, i) => (
+            <li key={key} className="flex gap-3">
+              <span className="shrink-0 font-black text-[var(--color-accent)]">
+                {i + 1}.
+              </span>
+              <span>{t(key)}</span>
+            </li>
+          ))}
+        </ol>
+        <Button
+          variant="ghost"
+          size="md"
+          fullWidth
+          className="mt-5"
+          onClick={() => setRulesOpen(false)}
+        >
+          {t('common.close')}
+        </Button>
+      </Modal>
     </div>
   );
 }
