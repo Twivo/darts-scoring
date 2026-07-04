@@ -1,15 +1,17 @@
 import { useGame } from '@/store/GameContext';
 import { participantLabel } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import type { ResolvedVisit } from '@/domain/types';
 
 /**
  * DartConnect-style visit history for the current leg: one column per
  * participant, one row per round. Each cell shows the score, the remaining
- * after the visit, and the darts used. Tap a cell to edit/delete that visit.
+ * after the visit, and the darts used. Tap a cell to edit that visit.
  */
 export function VisitHistory({ onEdit }: { onEdit: (eventId: string) => void }) {
   const { config, state } = useGame();
+  const { t } = useT();
   const leg = state.legs[state.currentLegIndex];
 
   const columns = config.participants.map((p) => ({
@@ -23,7 +25,7 @@ export function VisitHistory({ onEdit }: { onEdit: (eventId: string) => void }) 
   const Cell = ({ v }: { v: ResolvedVisit | undefined }) => {
     if (!v) return <div className="rounded-lg px-2 py-2" />;
     const label = v.isBust
-      ? 'BUST'
+      ? t('game.bust')
       : v.isCheckout
         ? `${v.effectiveScore}`
         : `${v.effectiveScore}`;
@@ -79,7 +81,7 @@ export function VisitHistory({ onEdit }: { onEdit: (eventId: string) => void }) 
 
       {rounds === 0 ? (
         <p className="px-3 py-4 text-sm text-[var(--color-text-dim)]">
-          No visits yet this leg.
+          {t('visitHistory.empty')}
         </p>
       ) : (
         <div className="px-1 py-1">

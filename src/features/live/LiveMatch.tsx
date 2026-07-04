@@ -92,9 +92,13 @@ export function LiveMatch() {
       bName: encounter.plan.teams.B.name,
       scoreA: encounter.scoreA,
       scoreB: encounter.scoreB,
-      label: `match ${n} of ${total} · ${match.mode === 'DOUBLE' ? 'doubles' : 'singles'}`,
+      label: `${t('live.matchLabel')
+        .replace('{n}', String(n))
+        .replace('{total}', String(total))} · ${t(
+        match.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles',
+      ).toLowerCase()}`,
     };
-  }, [encounter, match]);
+  }, [encounter, match, t]);
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-3 py-4">

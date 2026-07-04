@@ -1,9 +1,11 @@
 import { useGame } from '@/store/GameContext';
 import { participantLabel, playerName } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 
 export function Header() {
   const { config, state, saveStatus } = useGame();
+  const { t } = useT();
   const { activeParticipantId, activePlayerId, legStarterId } = state;
 
   const isDouble = config.mode === 'DOUBLE';
@@ -30,7 +32,7 @@ export function Header() {
             {participantLabel(config, activeParticipantId)}
           </span>
         )}
-        <span className="text-[var(--color-text-dim)]">to throw</span>
+        <span className="text-[var(--color-text-dim)]">{t('game.toThrowSuffix')}</span>
       </div>
 
       {saveStatus !== 'saved' && (
@@ -43,8 +45,8 @@ export function Header() {
           )}
           title={
             saveStatus === 'offline'
-              ? 'Offline — the game is kept in memory and will save automatically once the connection is back'
-              : 'Saving to the database…'
+              ? t('game.offlineTitle')
+              : t('game.savingTitle')
           }
         >
           <span
@@ -55,17 +57,19 @@ export function Header() {
                 : 'animate-pulse bg-[var(--color-accent)]',
             )}
           />
-          {saveStatus === 'offline' ? 'Offline — retrying' : 'Saving…'}
+          {saveStatus === 'offline' ? t('game.offlineRetrying') : t('common.saving')}
         </span>
       )}
 
       <div className="shrink-0 text-right text-[var(--color-text-dim)]">
         <span className="font-semibold text-[var(--color-accent)]">
-          Leg {legNumber}
+          {t('game.leg')} {legNumber}
         </span>{' '}
-        · {starterName} starts
+        · {t('game.starts').replace('{starter}', starterName)}
         <span className="ml-1 hidden sm:inline">
-          · {config.variant} DO · first to {config.legsToWin}
+          · {t('game.shortInfo')
+            .replace('{variant}', String(config.variant))
+            .replace('{legs}', String(config.legsToWin))}
         </span>
       </div>
     </header>

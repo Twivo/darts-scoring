@@ -45,7 +45,6 @@ interface GameContextValue {
   forfeitGame: (participantId: string) => void;
   undo: () => void;
   editVisit: (eventId: string, scored: number, darts?: number) => void;
-  deleteEvent: (eventId: string) => void;
   endGame: () => void;
 }
 
@@ -182,8 +181,6 @@ export function GameProvider({
       undo: () => dispatch({ type: 'UNDO' }),
       editVisit: (eventId, scored, darts) =>
         dispatch({ type: 'EDIT_VISIT', eventId, scored, darts }),
-      deleteEvent: (eventId) =>
-        dispatch({ type: 'DELETE_EVENT', eventId }),
       endGame: () => {
         onEnd?.();
       },

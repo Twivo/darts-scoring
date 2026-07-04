@@ -1,58 +1,40 @@
 import { useGame } from '@/store/GameContext';
 import { Button } from '@/components/ui/Button';
-import { ShareButton } from '@/components/ShareButton';
 import { participantLabel } from '@/domain/presentation';
 import type { ParticipantStats } from '@/domain/types';
-import type { SharePayload } from '@/lib/share';
+import { useT } from '@/store/LangContext';
 import { Confetti } from './Confetti';
 
 interface StatRow {
   key: string;
-  label: string;
   format: (s: ParticipantStats) => string;
   /** higher is better (for highlighting) */
   better?: 'high' | 'low';
 }
 
 const ROWS: StatRow[] = [
-  { key: 'legs', label: 'Legs won', format: (s) => String(s.legsWon), better: 'high' },
-  { key: 'avg', label: '3-dart average', format: (s) => s.average3.toFixed(1), better: 'high' },
-  { key: 'first9', label: 'First 9 avg', format: (s) => s.first9Average.toFixed(1), better: 'high' },
-  { key: 'darts', label: 'Total darts', format: (s) => String(s.totalDarts), better: 'low' },
-  { key: 'best', label: 'Best leg (darts)', format: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? `${s.bestLegDarts}` : '—'), better: 'low' },
-  { key: 'worst', label: 'Worst leg (darts)', format: (s) => (s.worstLegDarts ?? '—').toString(), better: 'high' },
-  { key: 'high', label: 'Highest visit', format: (s) => String(s.highestVisit), better: 'high' },
-  { key: '180', label: '180s', format: (s) => String(s.count180), better: 'high' },
-  { key: '140', label: '140+', format: (s) => String(s.count140plus), better: 'high' },
-  { key: '100', label: '100+', format: (s) => String(s.count100plus), better: 'high' },
-  { key: '60', label: '60+', format: (s) => String(s.count60plus), better: 'high' },
-  { key: 'bust', label: 'Busts', format: (s) => String(s.busts), better: 'low' },
+  { key: 'legs', format: (s) => String(s.legsWon), better: 'high' },
+  { key: 'avg', format: (s) => s.average3.toFixed(1), better: 'high' },
+  { key: 'first9', format: (s) => s.first9Average.toFixed(1), better: 'high' },
+  { key: 'darts', format: (s) => String(s.totalDarts), better: 'low' },
+  { key: 'best', format: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? `${s.bestLegDarts}` : '—'), better: 'low' },
+  { key: 'worst', format: (s) => (s.worstLegDarts ?? '—').toString(), better: 'high' },
+  { key: 'high', format: (s) => String(s.highestVisit), better: 'high' },
+  { key: '180', format: (s) => String(s.count180), better: 'high' },
+  { key: '140', format: (s) => String(s.count140plus), better: 'high' },
+  { key: '100', format: (s) => String(s.count100plus), better: 'high' },
+  { key: '60', format: (s) => String(s.count60plus), better: 'high' },
+  { key: 'bust', format: (s) => String(s.busts), better: 'low' },
 ];
 
 export function StatsScreen() {
   const { config, state, endGame, undo } = useGame();
+  const { t } = useT();
   const winnerLabel = state.winnerId
     ? participantLabel(config, state.winnerId)
-    : '—';
+    : t('common.dash');
 
   const parts = config.participants;
-
-  const buildShare = (): SharePayload => {
-    const sides = parts.map((p) => participantLabel(config, p.id));
-    const legs = parts.map((p) => state.legsWon[p.id] ?? 0);
-    const avgs = parts.map(
-      (p) => state.stats.byParticipant[p.id]?.average3.toFixed(1) ?? '—',
-    );
-    const text =
-      `🎯 ${winnerLabel} wins ${legs.join('–')}!\n` +
-      `${sides.join(' vs ')} · ${config.variant} Double Out\n` +
-      `3-dart avg ${avgs.join(' vs ')} · via GenevaDartsConnect`;
-    return {
-      title: 'GenevaDartsConnect result',
-      text,
-      url: window.location.href.split('#')[0],
-    };
-  };
 
   const best = (row: StatRow): string | null => {
     if (!row.better) return null;
@@ -79,9 +61,11 @@ export function StatsScreen() {
       <Confetti />
       <div className="relative z-50 text-center">
         <div className="mb-2 text-6xl">🏆</div>
-        <h1 className="text-3xl font-black">{winnerLabel} wins the match!</h1>
+        <h1 className="text-3xl font-black">
+          {t('stats.winner').replace('{winner}', winnerLabel)}
+        </h1>
         <p className="mt-1 text-[var(--color-text-dim)]">
-          {config.variant} Double Out · {Object.values(state.legsWon).join(' — ')}
+          {config.variant} {t('game.doubleOut')} · {Object.values(state.legsWon).join(' — ')}
         </p>
       </div>
 
@@ -89,7 +73,7 @@ export function StatsScreen() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-[var(--color-surface-2)]">
-              <th className="px-3 py-3 text-left font-semibold">Statistic</th>
+              <th className="px-3 py-3 text-left font-semibold">{t('stats.statistic')}</th>
               {parts.map((p) => (
                 <th key={p.id} className="px-3 py-3 text-right font-bold">
                   {participantLabel(config, p.id)}
@@ -106,7 +90,7 @@ export function StatsScreen() {
                   className={i % 2 ? 'bg-[var(--color-surface)]' : ''}
                 >
                   <td className="px-3 py-2.5 text-[var(--color-text-dim)]">
-                    {row.label}
+                    {t(`stats.row.${row.key}`)}
                   </td>
                   {parts.map((p) => {
                     const s = state.stats.byParticipant[p.id];
@@ -121,7 +105,7 @@ export function StatsScreen() {
                             : 'text-[var(--color-text)]')
                         }
                       >
-                        {s ? row.format(s) : '—'}
+                        {s ? row.format(s) : t('common.dash')}
                       </td>
                     );
                   })}
@@ -134,11 +118,10 @@ export function StatsScreen() {
 
       <div className="relative z-50 mt-8 flex flex-col gap-3">
         <Button variant="surface" size="lg" fullWidth onClick={undo}>
-          ↩ Back — correct the score
+          {t('stats.correctScore')}
         </Button>
-        <ShareButton payload={buildShare} />
         <Button variant="accent" size="xl" fullWidth onClick={endGame}>
-          New game
+          {t('home.new')}
         </Button>
       </div>
     </div>

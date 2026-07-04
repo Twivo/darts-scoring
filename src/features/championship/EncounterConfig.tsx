@@ -3,6 +3,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { getRepository } from '@/data';
+import { useT } from '@/store/LangContext';
 import { fixtureMatchConfig, persistEncounter } from '@/store/encounterService';
 import { loadMatch, persistMatch } from '@/store/matchService';
 import type { EncounterRecord } from '@/data/types';
@@ -25,6 +26,7 @@ export function EncounterConfig({
   onClose: () => void;
   onUpdated: (e: EncounterRecord) => void;
 }) {
+  const { t } = useT();
   const { teams } = encounter.plan;
   const [settings, setSettings] = useState<EncounterSettings>({
     starterSide: 'A',
@@ -121,11 +123,11 @@ export function EncounterConfig({
   };
 
   return (
-    <Modal open onClose={onClose} className="max-w-2xl" title="Configure encounter">
+    <Modal open onClose={onClose} className="max-w-2xl" title={t('champ.configureTitle')}>
       <div className="max-h-[78vh] overflow-y-auto pr-1">
         {/* settings */}
         <div className="mb-4 rounded-xl border border-[var(--color-border)] p-3">
-          <Row label="Legs to win">
+          <Row label={t('champ.legsToWin')}>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <Chip
@@ -138,7 +140,7 @@ export function EncounterConfig({
               ))}
             </div>
           </Row>
-          <Row label="Starts">
+          <Row label={t('champ.starts')}>
             <div className="flex gap-1">
               {(['A', 'B'] as Side[]).map((side) => (
                 <Chip
@@ -151,7 +153,7 @@ export function EncounterConfig({
               ))}
             </div>
           </Row>
-          <Row label="Start mode">
+          <Row label={t('champ.startMode')}>
             <div className="flex gap-1">
               {(['BULL', 'MANUAL'] as const).map((p) => (
                 <Chip
@@ -159,7 +161,7 @@ export function EncounterConfig({
                   active={settings.startingPolicy === p}
                   onClick={() => setSettings((s) => ({ ...s, startingPolicy: p }))}
                 >
-                  {p === 'BULL' ? 'Bull' : 'Fixed'}
+                  {p === 'BULL' ? t('champ.bull') : t('champ.fixed')}
                 </Chip>
               ))}
               <Chip
@@ -168,12 +170,12 @@ export function EncounterConfig({
                   setSettings((s) => ({ ...s, alternateStarter: !s.alternateStarter }))
                 }
               >
-                Alternate
+                {t('champ.alternate')}
               </Chip>
             </div>
           </Row>
           <p className="mt-1 text-xs text-[var(--color-text-mute)]">
-            Applies to matches not started yet.
+            {t('champ.notStartedApply')}
           </p>
         </div>
 
@@ -186,7 +188,7 @@ export function EncounterConfig({
             const nextF = fixtures[pos + 1];
             const canUp = reord && !!prev && canReorder(prev);
             const canDown = reord && !!nextF && canReorder(nextF);
-            const lockLabel = f.winner ? 'played' : !editP ? 'in progress' : null;
+            const lockLabel = f.winner ? t('champ.played') : !editP ? t('common.inProgress') : null;
             return (
               <div
                 key={f.index}
@@ -199,7 +201,7 @@ export function EncounterConfig({
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wide text-[var(--color-accent)]">
-                    Match {pos + 1} · {f.kind === 'DOUBLE' ? 'Double' : 'Single'}
+                    {t('common.match')} {pos + 1} · {f.kind === 'DOUBLE' ? t('champ.double') : t('champ.single')}
                     {lockLabel && (
                       <span className="ml-2 text-[var(--color-text-mute)]">
                         🔒 {lockLabel}
@@ -240,7 +242,7 @@ export function EncounterConfig({
 
         <div className="mt-4 flex gap-2">
           <Button variant="ghost" size="lg" fullWidth onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             variant="accent"
@@ -249,7 +251,7 @@ export function EncounterConfig({
             disabled={busy}
             onClick={save}
           >
-            {busy ? 'Saving…' : 'Save'}
+            {busy ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </div>

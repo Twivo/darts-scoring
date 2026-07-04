@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useGame } from '@/store/GameContext';
-import { validateVisitInput, visitErrorMessage } from '@/domain/rules/validation';
+import { useT } from '@/store/LangContext';
+import { validateVisitInput, type VisitErrorCode } from '@/domain/rules/validation';
 import { minDartsToCheckout } from '@/domain/rules/checkout';
 import { cn } from '@/lib/cn';
 
@@ -13,7 +14,8 @@ export function EditVisitModal({
   eventId: string | null;
   onClose: () => void;
 }) {
-  const { events, state, editVisit, deleteEvent } = useGame();
+  const { events, state, editVisit } = useGame();
+  const { t } = useT();
   const event = events.find((e) => e.id === eventId) ?? null;
   const isVisit = event?.type === 'VISIT';
 
@@ -48,7 +50,7 @@ export function EditVisitModal({
   const canSave = !!validation?.ok && dartsOk;
   const error =
     validation && !validation.ok && validation.code
-      ? visitErrorMessage(validation.code, remainingBefore)
+      ? visitErrorText(t, validation.code, remainingBefore)
       : null;
 
   const save = () => {
@@ -59,22 +61,16 @@ export function EditVisitModal({
     onClose();
   };
 
-  const remove = () => {
-    deleteEvent(event.id);
-    onClose();
-  };
-
   return (
     <Modal
       open={eventId !== null}
       onClose={onClose}
-      title={isVisit ? 'Edit visit' : 'Special visit'}
+      title={isVisit ? t('editVisit.title') : t('editVisit.specialTitle')}
     >
       {isVisit ? (
         <>
           <p className="mb-2 text-sm text-[var(--color-text-dim)]">
-            Visit score (0–180) — same rules as live entry. Everything
-            recalculates instantly.
+            {t('editVisit.help')}
           </p>
           <input
             autoFocus
@@ -98,7 +94,7 @@ export function EditVisitModal({
           {isCheckout && (
             <div className="mb-4">
               <p className="mb-1.5 text-xs text-[var(--color-text-dim)]">
-                Darts used to check out
+                {t('editVisit.dartsUsed')}
               </p>
               <div className="flex gap-2">
                 {[1, 2, 3].map((d) => (
@@ -122,15 +118,11 @@ export function EditVisitModal({
         </>
       ) : (
         <p className="mb-4 text-[var(--color-text-dim)]">
-          This entry ({event.type}) can only be deleted, not edited. Everything
-          recalculates instantly.
+          {t('editVisit.notEditable').replace('{type}', event.type)}
         </p>
       )}
 
       <div className="flex gap-2">
-        <Button variant="danger" size="lg" fullWidth onClick={remove}>
-          Delete
-        </Button>
         {isVisit && (
           <Button
             variant="primary"
@@ -139,10 +131,35 @@ export function EditVisitModal({
             disabled={!canSave}
             onClick={save}
           >
-            Save
+            {t('common.save')}
           </Button>
         )}
       </div>
     </Modal>
   );
+}
+
+function visitErrorText(
+  t: (key: string) => string,
+  code: VisitErrorCode,
+  remainingBefore: number,
+): string {
+  switch (code) {
+    case 'SCORE_RANGE':
+      return t('validation.scoreRange');
+    case 'IMPOSSIBLE_SCORE':
+      return t('validation.impossible');
+    case 'OVER_REMAINING':
+      return t('validation.overRemaining').replace(
+        '{remaining}',
+        String(remainingBefore),
+      );
+    case 'LEAVES_ONE':
+      return t('validation.leavesOne');
+    case 'INVALID_CHECKOUT':
+      return t('validation.invalidCheckout').replace(
+        '{remaining}',
+        String(remainingBefore),
+      );
+  }
 }

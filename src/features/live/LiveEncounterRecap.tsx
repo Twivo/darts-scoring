@@ -1,5 +1,6 @@
 import { buildGameState } from '@/domain/engine';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import type { MatchRecord, EncounterRecord } from '@/data/types';
 
 /**
@@ -16,6 +17,7 @@ export function LiveEncounterRecap({
   matches: MatchRecord[];
   currentMatchId?: string;
 }) {
+  const { t } = useT();
   const { teams, fixtures } = encounter.plan;
   const nameOf = (id: string) =>
     [...teams.A.players, ...teams.B.players].find((p) => p.id === id)?.name ?? '—';
@@ -28,7 +30,7 @@ export function LiveEncounterRecap({
     <div className="mt-4">
       <div className="mb-2 flex items-center justify-between px-1">
         <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--color-text-dim)]">
-          Championship
+          {t('home.championship').replace('🏆 ', '')}
         </h2>
         <span className="text-sm font-black tnum">
           {teams.A.name} {encounter.scoreA}
@@ -76,7 +78,7 @@ export function LiveEncounterRecap({
                         {side(f.aPlayerIds)}
                       </span>
                       <span className="shrink-0 px-1 tnum text-[var(--color-text-dim)]">
-                        {m ? `${legsA}–${legsB}` : 'vs'}
+                        {m ? `${legsA}–${legsB}` : t('common.vs')}
                       </span>
                       <span
                         className={cn(
@@ -92,7 +94,7 @@ export function LiveEncounterRecap({
                     {isLive ? (
                       <span className="inline-flex items-center gap-1 rounded bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                        LIVE
+                        {t('common.live').toUpperCase()}
                       </span>
                     ) : played ? (
                       <span className="text-[var(--color-success)]">✓</span>

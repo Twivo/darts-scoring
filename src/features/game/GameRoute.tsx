@@ -4,6 +4,7 @@ import { GameProvider } from '@/store/GameContext';
 import { loadMatch } from '@/store/matchService';
 import { acquireLock, releaseLock, LOCK_HEARTBEAT_MS } from '@/store/matchLock';
 import { useAuth } from '@/store/AuthContext';
+import { useT } from '@/store/LangContext';
 import { Button } from '@/components/ui/Button';
 import { AdminLogin } from '@/features/admin/AdminLogin';
 import type { MatchRecord } from '@/data/types';
@@ -13,6 +14,7 @@ export function GameRoute() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useT();
   const [match, setMatch] = useState<MatchRecord | null>(null);
   const [loading, setLoading] = useState(true);
   /** True when another device is actively scoring this match. */
@@ -70,7 +72,7 @@ export function GameRoute() {
   if (loading || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-[var(--color-text-dim)]">
-        Loading match…
+        {t('game.loadingMatch')}
       </div>
     );
   }
@@ -80,8 +82,7 @@ export function GameRoute() {
     return (
       <div>
         <div className="mx-auto max-w-sm px-6 pt-6 text-center text-sm text-[var(--color-text-dim)]">
-          🔒 Resuming a match in progress is protected. Sign in with the
-          organizer account to take control.
+          {t('game.resumeProtected')}
         </div>
         <AdminLogin />
       </div>
@@ -93,18 +94,17 @@ export function GameRoute() {
       <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-5xl">🔒</div>
         <div>
-          <h1 className="text-xl font-black">Match in progress elsewhere</h1>
+          <h1 className="text-xl font-black">{t('game.lockedTitle')}</h1>
           <p className="mt-2 text-sm text-[var(--color-text-dim)]">
-            This match is being scored on another device. You can follow it live,
-            or take over once that device stops.
+            {t('game.lockedText')}
           </p>
         </div>
         <div className="flex w-full flex-col gap-3">
           <Button variant="accent" size="xl" fullWidth onClick={() => navigate(`/live/${id}`)}>
-            📺 Watch live
+            {t('home.live')}
           </Button>
           <Button variant="surface" size="lg" fullWidth onClick={() => navigate('/')}>
-            Home
+            {t('common.home').replace('← ', '')}
           </Button>
         </div>
       </div>

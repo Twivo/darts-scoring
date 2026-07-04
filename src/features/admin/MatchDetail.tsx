@@ -3,6 +3,7 @@ import { buildGameState } from '@/domain/engine';
 import { aggregatePlayerStats } from '@/domain/playerStats';
 import { participantDisplay } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import type { MatchRecord } from '@/data/types';
 import type { LegState, ResolvedVisit } from '@/domain/types';
 
@@ -14,6 +15,7 @@ export function MatchDetail({
   match: MatchRecord | null;
   onClose: () => void;
 }) {
+  const { t } = useT();
   if (!match) return null;
   const { config } = match;
   const state = buildGameState(config, match.events);
@@ -26,17 +28,17 @@ export function MatchDetail({
       : null;
 
   const STAT_ROWS: { label: string; get: (id: string) => string }[] = [
-    { label: 'Legs won', get: (id) => `${state.legsWon[id] ?? 0}` },
-    { label: '3-dart avg', get: (id) => statOf(id, (s) => s.average3.toFixed(1)) },
-    { label: 'First 9 avg', get: (id) => statOf(id, (s) => s.first9Average.toFixed(1)) },
-    { label: 'Best checkout', get: (id) => statOf(id, (s) => `${s.bestCheckout}`) },
+    { label: t('stats.row.legs'), get: (id) => `${state.legsWon[id] ?? 0}` },
+    { label: t('stats.row.avg'), get: (id) => statOf(id, (s) => s.average3.toFixed(1)) },
+    { label: t('stats.row.first9'), get: (id) => statOf(id, (s) => s.first9Average.toFixed(1)) },
+    { label: t('award.bestCheckout'), get: (id) => statOf(id, (s) => `${s.bestCheckout}`) },
     { label: '180', get: (id) => statOf(id, (s) => `${s.count180}`) },
     { label: '140+', get: (id) => statOf(id, (s) => `${s.count140plus}`) },
     { label: '100+', get: (id) => statOf(id, (s) => `${s.count100plus}`) },
     { label: '60+', get: (id) => statOf(id, (s) => `${s.count60plus}`) },
-    { label: 'Busts', get: (id) => statOf(id, (s) => `${s.busts}`) },
-    { label: 'Highest', get: (id) => statOf(id, (s) => `${s.highestVisit}`) },
-    { label: 'Total darts', get: (id) => statOf(id, (s) => `${s.totalDarts}`) },
+    { label: t('stats.row.bust'), get: (id) => statOf(id, (s) => `${s.busts}`) },
+    { label: t('stats.row.high'), get: (id) => statOf(id, (s) => `${s.highestVisit}`) },
+    { label: t('stats.row.darts'), get: (id) => statOf(id, (s) => `${s.totalDarts}`) },
   ];
 
   // resolve a participant's stat (in SINGLE the participant is one player;
@@ -74,17 +76,17 @@ export function MatchDetail({
         {/* summary */}
         <div className="mb-4">
           <h2 className="text-xl font-black">
-            {parts.map((p) => participantDisplay(config, p.id)).join('  vs  ')}
+            {parts.map((p) => participantDisplay(config, p.id)).join(`  ${t('common.vs')}  `)}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--color-text-dim)]">
-            {match.variant} {match.mode === 'DOUBLE' ? 'Doubles' : 'Singles'} ·{' '}
+            {match.variant} {t(match.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles')} ·{' '}
             {match.createdAt ? new Date(match.createdAt).toLocaleString() : ''} ·{' '}
             {winner ? (
-              <span className="text-[var(--color-success)]">Winner: {winner}</span>
+              <span className="text-[var(--color-success)]">{t('common.winner')}: {winner}</span>
             ) : (
-              'In progress'
+              t('common.inProgress')
             )}{' '}
-            · legs {parts.map((p) => state.legsWon[p.id] ?? 0).join('–')}
+            · {t('game.legs')} {parts.map((p) => state.legsWon[p.id] ?? 0).join('–')}
           </p>
         </div>
 
@@ -93,7 +95,7 @@ export function MatchDetail({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--color-surface-2)]">
-                <th className="px-3 py-2 text-left font-semibold">Stat</th>
+                <th className="px-3 py-2 text-left font-semibold">{t('stats.row.stat')}</th>
                 {parts.map((p) => (
                   <th key={p.id} className="px-3 py-2 text-right font-bold">
                     {participantDisplay(config, p.id)}
@@ -120,7 +122,7 @@ export function MatchDetail({
 
         {/* leg-by-leg scoring */}
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-          Scoring
+          {t('admin.scoring')}
         </h3>
         <div className="flex flex-col gap-4">
           {state.legs.map((leg) => (
@@ -139,6 +141,7 @@ function LegBreakdown({
   leg: LegState;
   config: MatchRecord['config'];
 }) {
+  const { t } = useT();
   const parts = config.participants;
   const byPart = parts.map((p) => ({
     id: p.id,
@@ -152,10 +155,10 @@ function LegBreakdown({
   return (
     <div className="rounded-xl border border-[var(--color-border)]">
       <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-1.5 text-xs">
-        <span className="font-bold">Leg {leg.index + 1}</span>
+        <span className="font-bold">{t('game.leg')} {leg.index + 1}</span>
         {winnerLabel && (
           <span className="text-[var(--color-success)]">
-            {winnerLabel} won{leg.endReason ? ` (${leg.endReason.toLowerCase()})` : ''}
+            {winnerLabel} {t('common.won')}{leg.endReason ? ` (${leg.endReason.toLowerCase()})` : ''}
           </span>
         )}
       </div>
@@ -177,6 +180,7 @@ function LegBreakdown({
 }
 
 function Cell({ v }: { v: ResolvedVisit | undefined }) {
+  const { t } = useT();
   if (!v) return <div className="px-1 py-0.5" />;
   return (
     <div className="flex items-center justify-between px-1.5 py-0.5 text-sm">
@@ -187,7 +191,7 @@ function Cell({ v }: { v: ResolvedVisit | undefined }) {
           v.isCheckout && 'text-[var(--color-success)]',
         )}
       >
-        {v.isBust ? 'BUST' : v.effectiveScore}
+        {v.isBust ? t('game.bust') : v.effectiveScore}
         {v.isCheckout && ' ✓'}
       </span>
       <span className="text-xs text-[var(--color-text-mute)] tnum">

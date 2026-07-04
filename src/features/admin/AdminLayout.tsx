@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/store/AuthContext';
+import { useT } from '@/store/LangContext';
 import { RequireAuth } from './RequireAuth';
 
 /**
@@ -8,16 +9,17 @@ import { RequireAuth } from './RequireAuth';
  * the auth gate and layout are shared.
  */
 const NAV = [
-  { to: '/admin/players', label: 'Players' },
-  { to: '/admin/teams', label: 'Teams' },
-  { to: '/admin/stats', label: 'Statistics' },
-  { to: '/admin/championship', label: 'Championship' },
-  { to: '/admin/review', label: 'Season review' },
+  { to: '/admin/players', labelKey: 'admin.players' },
+  { to: '/admin/teams', labelKey: 'admin.teams' },
+  { to: '/admin/stats', labelKey: 'admin.title' },
+  { to: '/admin/championship', labelKey: 'admin.championship' },
+  { to: '/admin/review', labelKey: 'admin.seasonReview' },
 ];
 
 export function AdminLayout() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { t } = useT();
 
   return (
     <RequireAuth>
@@ -28,9 +30,9 @@ export function AdminLayout() {
               onClick={() => navigate('/')}
               className="rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
             >
-              ← App
+              {t('common.app')}
             </button>
-            <h1 className="text-xl font-black">Admin</h1>
+            <h1 className="text-xl font-black">{t('admin.title')}</h1>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="hidden text-[var(--color-text-dim)] sm:inline">
@@ -40,7 +42,7 @@ export function AdminLayout() {
               onClick={() => signOut()}
               className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 hover:bg-[var(--color-surface-2)]"
             >
-              Sign out
+              {t('admin.signOut')}
             </button>
           </div>
         </header>
@@ -59,7 +61,7 @@ export function AdminLayout() {
                 )
               }
             >
-              {n.label}
+              {t(n.labelKey)}
             </NavLink>
           ))}
         </nav>

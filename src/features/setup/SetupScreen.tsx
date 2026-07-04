@@ -7,6 +7,7 @@ import { createId, createUuid } from '@/lib/id';
 import { getRepository } from '@/data';
 import { persistMatch } from '@/store/matchService';
 import { useRoster } from '@/store/RosterContext';
+import { useT } from '@/store/LangContext';
 import type { MatchRecord } from '@/data/types';
 import type {
   GameConfig,
@@ -49,6 +50,7 @@ function Choice({
 
 export function SetupScreen() {
   const navigate = useNavigate();
+  const { t } = useT();
   // Only active players can be picked for a match.
   const { activePlayers: players } = useRoster();
 
@@ -84,13 +86,13 @@ export function SetupScreen() {
 
   const errorHint = useMemo(() => {
     if (players.length < perSide * 2)
-      return `You need at least ${perSide * 2} players (add some under "Players").`;
+      return t('setup.needPlayers').replace('{count}', String(perSide * 2));
     if (!valid)
       return mode === 'DOUBLE'
-        ? `Add ${perSide} players to each team.`
-        : `Add a player to each side.`;
+        ? t('setup.addEachTeam').replace('{count}', String(perSide))
+        : t('setup.addEachSide');
     return null;
-  }, [players.length, perSide, valid, mode]);
+  }, [players.length, perSide, valid, mode, t]);
 
   const [starting, setStarting] = useState(false);
 
@@ -101,7 +103,7 @@ export function SetupScreen() {
 
     const buildParticipant = (side: Side, members: typeof teamA): Participant => ({
       id: createId('part'),
-      label: mode === 'DOUBLE' ? `Team ${side}` : members[0]!.name,
+      label: mode === 'DOUBLE' ? t('setup.team').replace('{side}', side) : members[0]!.name,
       playerIds: members.map((m) => m.id),
     });
 
@@ -161,22 +163,25 @@ export function SetupScreen() {
 
   const labelForSide = (side: Side): string =>
     mode === 'DOUBLE'
-      ? `Team ${side}`
+      ? t('setup.team').replace('{side}', side)
       : (side === 'A' ? teamA[0]?.name : teamB[0]?.name) ??
-        `Player ${side === 'A' ? 1 : 2}`;
+        t('setup.playerSlot').replace(
+          '{number}',
+          String(side === 'A' ? 1 : 2),
+        );
 
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-5 py-6">
       <header className="mb-6 flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-          ← Back
+          {t('common.back')}
         </Button>
-        <h1 className="text-2xl font-bold">New game</h1>
+        <h1 className="text-2xl font-bold">{t('setup.title')}</h1>
       </header>
 
       <div className="flex flex-col gap-6">
         <section>
-          <SectionTitle>Game type</SectionTitle>
+          <SectionTitle>{t('setup.gameType')}</SectionTitle>
           <div className="flex gap-2">
             <Choice active={variant === 501} onClick={() => setVariant(501)}>
               501 Double Out
@@ -188,7 +193,7 @@ export function SetupScreen() {
         </section>
 
         <section>
-          <SectionTitle>Mode</SectionTitle>
+          <SectionTitle>{t('setup.mode')}</SectionTitle>
           <div className="flex gap-2">
             <Choice
               active={mode === 'SINGLE'}
@@ -197,7 +202,7 @@ export function SetupScreen() {
                 setAssign({});
               }}
             >
-              Singles (1v1)
+              {t('game.singles')} (1v1)
             </Choice>
             <Choice
               active={mode === 'DOUBLE'}
@@ -206,13 +211,13 @@ export function SetupScreen() {
                 setAssign({});
               }}
             >
-              Doubles (2v2)
+              {t('game.doubles')} (2v2)
             </Choice>
           </div>
         </section>
 
         <section>
-          <SectionTitle>Legs to win (first to)</SectionTitle>
+          <SectionTitle>{t('setup.legsToWin')}</SectionTitle>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
               <Choice
@@ -227,15 +232,18 @@ export function SetupScreen() {
         </section>
 
         <section>
-          <SectionTitle>Players</SectionTitle>
+          <SectionTitle>{t('setup.players')}</SectionTitle>
           <div className="grid grid-cols-2 gap-3">
             {(['A', 'B'] as Side[]).map((side) => {
               const members = side === 'A' ? teamA : teamB;
               const full = members.length >= perSide;
               const label =
                 mode === 'DOUBLE'
-                  ? `Team ${side}`
-                  : `Player ${side === 'A' ? 1 : 2}`;
+                  ? t('setup.team').replace('{side}', side)
+                  : t('setup.playerSlot').replace(
+                      '{number}',
+                      String(side === 'A' ? 1 : 2),
+                    );
               return (
                 <div
                   key={side}
@@ -260,7 +268,7 @@ export function SetupScreen() {
                         <button
                           onClick={() => remove(p.id)}
                           className="shrink-0 text-[var(--color-text-dim)] hover:text-[var(--color-accent)]"
-                          aria-label="Remove player"
+                          aria-label={t('setup.removePlayer')}
                         >
                           ✕
                         </button>
@@ -274,7 +282,7 @@ export function SetupScreen() {
                         }}
                         className="rounded-lg border border-dashed border-[var(--color-border)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
                       >
-                        + Add player
+                        {t('setup.addPlayer')}
                       </button>
                     )}
                   </div>
@@ -285,16 +293,16 @@ export function SetupScreen() {
         </section>
 
         <section>
-          <SectionTitle>Who starts leg 1?</SectionTitle>
+          <SectionTitle>{t('setup.starts')}</SectionTitle>
           <div className="mb-2 flex gap-2">
             <Choice active={policy === 'BULL'} onClick={() => setPolicy('BULL')}>
-              🎯 Bull-up
+              {t('setup.bullUp')}
             </Choice>
             <Choice
               active={policy === 'MANUAL'}
               onClick={() => setPolicy('MANUAL')}
             >
-              Pick manually
+              {t('setup.pickManually')}
             </Choice>
           </div>
           {policy === 'MANUAL' && (
@@ -314,7 +322,7 @@ export function SetupScreen() {
             </div>
           )}
           <p className="mt-2 text-xs text-[var(--color-text-mute)]">
-            The starter alternates automatically every leg.
+            {t('setup.starterHint')}
           </p>
         </section>
 
@@ -331,7 +339,7 @@ export function SetupScreen() {
           disabled={!valid}
           onClick={onStartClick}
         >
-          {policy === 'BULL' ? 'Continue — bull-up' : 'Start game'}
+          {policy === 'BULL' ? t('setup.continueBull') : t('setup.startGame')}
         </Button>
       </div>
 
@@ -339,11 +347,13 @@ export function SetupScreen() {
         open={bullOpen}
         onClose={() => setBullOpen(false)}
         closeOnBackdrop={false}
-        title="🎯 Bull-up"
+        title={t('setup.bullUp')}
       >
         <p className="mb-5 text-[var(--color-text-dim)]">
-          Each {mode === 'DOUBLE' ? 'team' : 'player'} throws at the bull. Who
-          landed closest and starts?
+          {t('setup.bullText').replace(
+            '{unit}',
+            mode === 'DOUBLE' ? t('setup.unitTeam') : t('setup.unitPlayer'),
+          )}
         </p>
         <div className="flex flex-col gap-3">
           <Button
@@ -368,7 +378,7 @@ export function SetupScreen() {
             fullWidth
             onClick={() => setBullOpen(false)}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
         </div>
       </Modal>
@@ -376,19 +386,19 @@ export function SetupScreen() {
       <Modal
         open={picker !== null}
         onClose={() => setPicker(null)}
-        title="Add a player"
+        title={t('setup.addPlayer').replace('+ ', '')}
       >
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search players…"
+          placeholder={t('setup.searchPlayers')}
           className="mb-3 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
         />
         <ul className="flex max-h-[50vh] flex-col gap-1 overflow-y-auto">
           {available.length === 0 ? (
             <li className="py-6 text-center text-sm text-[var(--color-text-dim)]">
-              No player found.
+              {t('setup.noPlayerFound')}
             </li>
           ) : (
             available.map((p) => (

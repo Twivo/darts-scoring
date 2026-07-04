@@ -51,7 +51,7 @@ export function LiveList() {
             const state = buildGameState(m.config, m.events);
             const sides = m.config.participants
               .map((p) => participantDisplay(m.config, p.id))
-              .join('  vs  ');
+              .join(`  ${t('common.vs')}  `);
             const legs = m.config.participants
               .map((p) => state.legsWon[p.id] ?? 0)
               .join(' – ');
@@ -68,8 +68,8 @@ export function LiveList() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{sides}</span>
                     <span className="text-xs text-[var(--color-text-dim)]">
-                      {m.variant} {m.mode === 'DOUBLE' ? 'Doubles' : 'Singles'}
-                      {m.encounterId ? ` · ${t('live.championship')}` : ''} · legs {legs}
+                      {m.variant} {t(m.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles')}
+                      {m.encounterId ? ` · ${t('live.championship')}` : ''} · {t('game.legs')} {legs}
                     </span>
                   </span>
                   <span className="text-[var(--color-text-dim)]">›</span>

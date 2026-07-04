@@ -14,7 +14,6 @@ export type GameAction =
   | { type: 'APPEND_EVENT'; event: GameEvent }
   | { type: 'UNDO' }
   | { type: 'EDIT_VISIT'; eventId: string; scored: number; darts?: number }
-  | { type: 'DELETE_EVENT'; eventId: string }
   | { type: 'RESET_EVENTS' };
 
 export function gameReducer(
@@ -44,12 +43,6 @@ export function gameReducer(
       });
       return { ...state, events };
     }
-
-    case 'DELETE_EVENT':
-      return {
-        ...state,
-        events: state.events.filter((e) => e.id !== action.eventId),
-      };
 
     case 'RESET_EVENTS':
       return { ...state, events: [] };

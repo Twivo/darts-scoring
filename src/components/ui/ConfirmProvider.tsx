@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { Button } from './Button';
 import { Modal } from './Modal';
+import { useT } from '@/store/LangContext';
 
 interface ConfirmOptions {
   title: string;
@@ -24,6 +25,7 @@ type ConfirmFn = (opts: ConfirmOptions) => Promise<boolean>;
 const ConfirmContext = createContext<ConfirmFn | null>(null);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const { t } = useT();
   const [opts, setOpts] = useState<ConfirmOptions | null>(null);
   const resolver = useRef<((v: boolean) => void) | null>(null);
 
@@ -60,7 +62,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             fullWidth
             onClick={() => settle(false)}
           >
-            {opts?.cancelLabel ?? 'Cancel'}
+            {opts?.cancelLabel ?? t('common.cancel')}
           </Button>
           <Button
             variant={opts?.danger ? 'accent' : 'primary'}
@@ -68,7 +70,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             fullWidth
             onClick={() => settle(true)}
           >
-            {opts?.confirmLabel ?? 'Confirm'}
+            {opts?.confirmLabel ?? t('common.confirm')}
           </Button>
         </div>
       </Modal>

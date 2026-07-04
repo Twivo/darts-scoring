@@ -5,6 +5,7 @@ import { buildGameState } from '@/domain/engine';
 import { aggregatePlayerStats } from '@/domain/playerStats';
 import { participantDisplay } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import { MatchDetail } from './MatchDetail';
 import type { MatchRecord, Season } from '@/data/types';
 
@@ -26,6 +27,7 @@ type TrendPoint = {
 export function PlayerProfile() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useT();
   const repo = useMemo(() => getRepository(), []);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState<string>('');
@@ -182,7 +184,7 @@ export function PlayerProfile() {
           onClick={() => navigate('/admin/stats')}
           className="rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
         >
-          ← Statistics
+          {t('common.back')} {t('admin.title')}
         </button>
         <h2 className="text-2xl font-black">{displayName}</h2>
         <select
@@ -190,69 +192,69 @@ export function PlayerProfile() {
           onChange={(e) => setSeasonId(e.target.value)}
           className="ml-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm outline-none"
         >
-          <option value="">All seasons</option>
+          <option value="">{t('admin.allSeasons')}</option>
           {seasons.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-              {s.isCurrent ? ' (current)' : ''}
+              {s.isCurrent ? ` (${t('common.current')})` : ''}
             </option>
           ))}
         </select>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-8 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : data.mine.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center text-[var(--color-text-dim)]">
-          No championship match for this player in this period.
+          {t('admin.noPlayerMatches')}
         </p>
       ) : (
         <>
           {/* overview */}
           <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Metric label="Matches" value={`${data.overall?.matchesPlayed ?? 0}`} />
+            <Metric label={t('common.matches')} value={`${data.overall?.matchesPlayed ?? 0}`} />
             <Metric
-              label="Won / Lost"
+              label={t('admin.wonLost')}
               value={`${data.overall?.matchesWon ?? 0} / ${(data.overall?.matchesPlayed ?? 0) - (data.overall?.matchesWon ?? 0)}`}
             />
             <Metric
-              label="Win rate"
+              label={t('admin.winRate')}
               value={`${Math.round((data.overall?.winRatio ?? 0) * 100)}%`}
             />
-            <Metric label="3-dart avg" value={(data.overall?.average3 ?? 0).toFixed(1)} accent />
+            <Metric label={t('stats.row.avg')} value={(data.overall?.average3 ?? 0).toFixed(1)} accent />
           </div>
 
           {/* key stats */}
           <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-6">
-            <Metric small label="First 9" value={(data.overall?.first9Average ?? 0).toFixed(1)} />
-            <Metric small label="180s" value={`${data.overall?.count180 ?? 0}`} />
+            <Metric small label={t('stats.row.first9')} value={(data.overall?.first9Average ?? 0).toFixed(1)} />
+            <Metric small label={t('stats.row.180')} value={`${data.overall?.count180 ?? 0}`} />
             <Metric small label="140+" value={`${data.overall?.count140plus ?? 0}`} />
-            <Metric small label="Best CO" value={`${data.overall?.bestCheckout ?? 0}`} />
+            <Metric small label={t('stats.row.bestCheckout')} value={`${data.overall?.bestCheckout ?? 0}`} />
             <Metric
               small
-              label="Best leg"
+              label={t('stats.row.bestLeg')}
               value={
                 data.overall?.bestLegDarts != null && data.overall.bestLegDarts >= 9
                   ? `${data.overall.bestLegDarts}`
                   : '—'
               }
             />
-            <Metric small label="Legs won" value={`${data.overall?.legsWon ?? 0}`} />
+            <Metric small label={t('stats.row.legs')} value={`${data.overall?.legsWon ?? 0}`} />
           </div>
 
           {/* average trend */}
-          <Section title="Average over time (per match)">
+          <Section title={t('admin.avgTrendTitle')}>
             <AverageTrend points={trend} />
           </Section>
 
           {/* personal records */}
-          <Section title="Records">
+          <Section title={t('admin.records')}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Record label="Best checkout" value={`${data.overall?.bestCheckout ?? 0}`} />
-              <Record label="Best match avg" value={data.bestMatchAvg.toFixed(1)} />
-              <Record label="Most 180s (match)" value={`${data.most180Match}`} />
+              <Record label={t('award.bestCheckout')} value={`${data.overall?.bestCheckout ?? 0}`} />
+              <Record label={t('admin.bestMatchAvg')} value={data.bestMatchAvg.toFixed(1)} />
+              <Record label={t('admin.most180Match')} value={`${data.most180Match}`} />
               <Record
-                label="Best leg (darts)"
+                label={t('stats.row.best')}
                 value={
                   data.overall?.bestLegDarts != null && data.overall.bestLegDarts >= 9
                     ? `${data.overall.bestLegDarts}`
@@ -263,15 +265,15 @@ export function PlayerProfile() {
           </Section>
 
           {/* head-to-head */}
-          <Section title="Head-to-head">
+          <Section title={t('admin.headToHead')}>
             <div className="mb-3 flex items-center gap-2 text-sm">
-              <span className="text-[var(--color-text-dim)]">vs</span>
+              <span className="text-[var(--color-text-dim)]">{t('common.vs')}</span>
               <select
                 value={opponent}
                 onChange={(e) => setOpponent(e.target.value)}
                 className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 outline-none"
               >
-                <option value="ALL">Select an opponent…</option>
+                <option value="ALL">{t('admin.selectOpponent')}</option>
                 {[...data.opponents.entries()]
                   .sort((a, b) => a[1].localeCompare(b[1]))
                   .map(([pid, n]) => (
@@ -285,11 +287,11 @@ export function PlayerProfile() {
             {h2h && (
               <>
                 <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  <Metric small label="Matches" value={`${h2h.played}`} />
-                  <Metric small label="W – L" value={`${h2h.wins} – ${h2h.losses}`} />
-                  <Metric small label="Legs" value={`${h2h.legsFor} – ${h2h.legsAgainst}`} />
-                  <Metric small label={`${displayName} avg`} value={h2h.avgFor.toFixed(1)} />
-                  <Metric small label={`${h2h.name} avg`} value={h2h.avgAgainst.toFixed(1)} />
+                  <Metric small label={t('common.matches')} value={`${h2h.played}`} />
+                  <Metric small label={`${t('admin.winShort')} – ${t('admin.lossShort')}`} value={`${h2h.wins} – ${h2h.losses}`} />
+                  <Metric small label={t('game.legs')} value={`${h2h.legsFor} – ${h2h.legsAgainst}`} />
+                  <Metric small label={`${displayName} ${t('game.avg')}`} value={h2h.avgFor.toFixed(1)} />
+                  <Metric small label={`${h2h.name} ${t('game.avg')}`} value={h2h.avgAgainst.toFixed(1)} />
                 </div>
                 <ul className="flex flex-col gap-1.5">
                   {h2h.rows.map((p) => (
@@ -301,7 +303,7 @@ export function PlayerProfile() {
                         <ResultBadge result={p.decided ? (p.won ? 'W' : 'L') : '…'} />
                         <span className="min-w-0 flex-1 truncate text-[var(--color-text-dim)]">
                           {p.date ? new Date(p.date).toLocaleDateString() : '—'} ·{' '}
-                          {p.m.mode === 'DOUBLE' ? 'Doubles' : 'Singles'}
+                          {t(p.m.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles')}
                         </span>
                         <span className="font-black tnum">
                           {p.myLegs}–{p.oppLegs}
@@ -316,7 +318,7 @@ export function PlayerProfile() {
           </Section>
 
           {/* match history */}
-          <Section title={`Match history (${data.per.length})`}>
+          <Section title={`${t('admin.matchHistory')} (${data.per.length})`}>
             <ul className="flex flex-col gap-1.5">
               {historyDesc.map((p) => (
                 <li key={p.m.id}>
@@ -327,11 +329,11 @@ export function PlayerProfile() {
                     <ResultBadge result={p.decided ? (p.won ? 'W' : 'L') : '…'} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">
-                        vs {participantDisplay(p.m.config, p.oppSideId)}
+                        {t('common.vs')} {participantDisplay(p.m.config, p.oppSideId)}
                       </span>
                       <span className="text-xs text-[var(--color-text-dim)]">
                         {p.date ? new Date(p.date).toLocaleDateString() : '—'} ·{' '}
-                        {p.m.mode === 'DOUBLE' ? 'Doubles' : 'Singles'}
+                        {t(p.m.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles')}
                       </span>
                     </span>
                     <span className="text-right">
@@ -339,7 +341,7 @@ export function PlayerProfile() {
                         {p.myLegs}–{p.oppLegs}
                       </span>
                       <span className="text-xs text-[var(--color-text-dim)]">
-                        avg {p.myAvg.toFixed(1)}
+                        {t('game.avg')} {p.myAvg.toFixed(1)}
                       </span>
                     </span>
                     <span className="text-[var(--color-text-dim)]">›</span>
@@ -411,6 +413,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function ResultBadge({ result }: { result: 'W' | 'L' | '…' }) {
+  const { t } = useT();
   return (
     <span
       className={cn(
@@ -422,17 +425,18 @@ function ResultBadge({ result }: { result: 'W' | 'L' | '…' }) {
             : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]',
       )}
     >
-      {result}
+      {result === 'W' ? t('admin.winShort') : result === 'L' ? t('admin.lossShort') : result}
     </span>
   );
 }
 
 /** Dependency-free SVG line chart with readable labels and recent match context. */
 function AverageTrend({ points }: { points: TrendPoint[] }) {
+  const { t } = useT();
   if (points.length < 2) {
     return (
       <p className="rounded-xl border border-dashed border-[var(--color-border)] p-4 text-center text-xs text-[var(--color-text-dim)]">
-        Not enough finished matches for a trend yet.
+        {t('admin.notEnoughTrend')}
       </p>
     );
   }
@@ -466,12 +470,12 @@ function AverageTrend({ points }: { points: TrendPoint[] }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-dim)]">
           <span className="h-2.5 w-6 rounded-full bg-[var(--color-accent)]" />
-          <span>3-dart average per match</span>
+          <span>{t('admin.avgLegend')}</span>
         </div>
         <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-[var(--color-text-dim)]">
-          <span>Best {best.average.toFixed(1)}</span>
-          <span>Latest {latest.average.toFixed(1)}</span>
-          <span>{points.length} matches</span>
+          <span>{t('admin.best').replace('{value}', best.average.toFixed(1))}</span>
+          <span>{t('admin.latest').replace('{value}', latest.average.toFixed(1))}</span>
+          <span>{points.length} {t('common.matches')}</span>
         </div>
       </div>
       <svg
@@ -479,7 +483,7 @@ function AverageTrend({ points }: { points: TrendPoint[] }) {
         preserveAspectRatio="none"
         className="h-52 w-full overflow-visible"
         role="img"
-        aria-label="3-dart average trend by match"
+        aria-label={t('admin.trendAria')}
       >
         {gridValues.map((value) => (
           <g key={value}>
@@ -562,7 +566,7 @@ function AverageTrend({ points }: { points: TrendPoint[] }) {
                 </text>
               )}
               <title>
-                {p.dateLabel} vs {p.opponent}: {p.average.toFixed(1)} avg, {p.result}{' '}
+                {p.dateLabel} {t('common.vs')} {p.opponent}: {p.average.toFixed(1)} {t('game.avg')}, {p.result}{' '}
                 {p.score}
               </title>
             </g>
@@ -572,7 +576,7 @@ function AverageTrend({ points }: { points: TrendPoint[] }) {
 
       <div className="mt-3 border-t border-[var(--color-border)] pt-3">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-          Recent matches
+          {t('admin.recentMatches')}
         </div>
         <ul className="grid gap-1.5 sm:grid-cols-2">
           {recent.map((p) => (
@@ -591,7 +595,7 @@ function AverageTrend({ points }: { points: TrendPoint[] }) {
                 {p.result}
               </span>
               <span className="min-w-0 flex-1 truncate text-[var(--color-text-dim)]">
-                #{p.matchNo} {p.dateLabel} vs {p.opponent}
+                #{p.matchNo} {p.dateLabel} {t('common.vs')} {p.opponent}
               </span>
               <span className="shrink-0 font-black text-[var(--color-text)] tnum">
                 {p.average.toFixed(1)}

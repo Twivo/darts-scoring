@@ -7,23 +7,24 @@ import {
 } from '@/domain/playerStats';
 import { participantDisplay } from '@/domain/presentation';
 import { loadMatch } from '@/store/matchService';
+import { useT } from '@/store/LangContext';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 import type { Fixture } from '@/domain/championship/types';
 
 interface Col {
   key: string;
-  label: string;
+  labelKey: string;
   fmt: (s: PlayerSeasonStats) => string;
 }
 const COLS: Col[] = [
-  { key: 'legs', label: 'Legs', fmt: (s) => `${s.legsWon}` },
-  { key: 'avg', label: '3-dart', fmt: (s) => s.average3.toFixed(1) },
-  { key: 'f9', label: 'First 9', fmt: (s) => s.first9Average.toFixed(1) },
-  { key: 'bco', label: 'Best CO', fmt: (s) => `${s.bestCheckout}` },
-  { key: '180', label: '180', fmt: (s) => `${s.count180}` },
-  { key: '140', label: '140+', fmt: (s) => `${s.count140plus}` },
-  { key: '100', label: '100+', fmt: (s) => `${s.count100plus}` },
-  { key: 'darts', label: 'Darts', fmt: (s) => `${s.totalDarts}` },
+  { key: 'legs', labelKey: 'stats.row.legs', fmt: (s) => `${s.legsWon}` },
+  { key: 'avg', labelKey: 'stats.row.avg', fmt: (s) => s.average3.toFixed(1) },
+  { key: 'f9', labelKey: 'stats.row.first9', fmt: (s) => s.first9Average.toFixed(1) },
+  { key: 'bco', labelKey: 'stats.row.bestCheckout', fmt: (s) => `${s.bestCheckout}` },
+  { key: '180', labelKey: 'stats.row.180', fmt: (s) => `${s.count180}` },
+  { key: '140', labelKey: 'stats.row.140', fmt: (s) => `${s.count140plus}` },
+  { key: '100', labelKey: 'stats.row.100', fmt: (s) => `${s.count100plus}` },
+  { key: 'darts', labelKey: 'stats.row.darts', fmt: (s) => `${s.totalDarts}` },
 ];
 
 /** Mandatory recap shown after every championship match. */
@@ -39,6 +40,7 @@ export function MatchStatsScreen({
   onBack: () => void;
   isLast: boolean;
 }) {
+  const { t } = useT();
   const [match, setMatch] = useState<MatchRecord | null>(null);
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export function MatchStatsScreen({
   if (!match) {
     return (
       <div className="flex flex-1 items-center justify-center text-[var(--color-text-dim)]">
-        Loading result…
+        {t('champ.loadingResult')}
       </div>
     );
   }
@@ -75,7 +77,7 @@ export function MatchStatsScreen({
     <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto px-4 py-5">
       <div className="mb-4 text-center">
         <div className="text-xs uppercase tracking-wide text-[var(--color-text-dim)]">
-          Match {fixture.index + 1} · {fixture.kind === 'DOUBLE' ? 'Doubles' : 'Singles'} result
+          {t('common.match')} {fixture.index + 1} · {t(fixture.kind === 'DOUBLE' ? 'game.doubles' : 'game.singles')} {t('champ.result')}
         </div>
         <h2 className="text-2xl font-black">
           🏆 {winnerLabel}
@@ -83,8 +85,8 @@ export function MatchStatsScreen({
         <div className="text-sm text-[var(--color-text-dim)]">
           {match.config.participants
             .map((p) => participantDisplay(match.config, p.id))
-            .join('  vs  ')}{' '}
-          · legs {legs}
+            .join(`  ${t('common.vs')}  `)}{' '}
+          · {t('game.legs')} {legs}
         </div>
       </div>
 
@@ -92,10 +94,10 @@ export function MatchStatsScreen({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[var(--color-surface-2)]">
-              <th className="px-3 py-2 text-left font-semibold">Player</th>
+              <th className="px-3 py-2 text-left font-semibold">{t('stats.row.player')}</th>
               {COLS.map((c) => (
                 <th key={c.key} className="px-2.5 py-2 text-right font-semibold">
-                  {c.label}
+                  {t(c.labelKey)}
                 </th>
               ))}
             </tr>
@@ -119,10 +121,10 @@ export function MatchStatsScreen({
 
       <div className="mt-5 flex flex-col gap-3">
         <Button variant="surface" size="lg" fullWidth onClick={onBack}>
-          ↩ Back — correct the score
+          {t('stats.correctScore')}
         </Button>
         <Button variant="accent" size="xl" fullWidth onClick={onNext}>
-          {isLast ? 'See final result ▶' : '▶ Next match'}
+          {isLast ? t('champ.seeFinal') : t('champ.nextMatch')}
         </Button>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import type { EncounterRecord } from '@/data/types';
 import { composeBlock } from '@/store/encounterService';
+import { useT } from '@/store/LangContext';
 import type { ComposeBlock } from '@/domain/championship/types';
 
 interface Comp {
@@ -20,6 +21,7 @@ export function FixtureComposer({
   block: ComposeBlock;
   onComposed: (updated: EncounterRecord) => void;
 }) {
+  const { t } = useT();
   const { teams } = encounter.plan;
   const per = block.kind === 'DOUBLE' ? 2 : 1;
 
@@ -76,16 +78,16 @@ export function FixtureComposer({
 
   const title =
     block.kind === 'DOUBLE'
-      ? 'Compose the doubles'
+      ? t('champ.composeDoubles')
       : block.start === 0
-        ? 'Compose the first singles'
-        : 'Compose the last singles';
+        ? t('champ.composeFirstSingles')
+        : t('champ.composeLastSingles');
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto px-4 py-4">
       <h2 className="mb-1 text-xl font-black">{title}</h2>
       <p className="mb-4 text-sm text-[var(--color-text-dim)]">
-        {teams.A.name} vs {teams.B.name}
+        {teams.A.name} {t('common.vs')} {teams.B.name}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -95,7 +97,7 @@ export function FixtureComposer({
             className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
           >
             <div className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--color-accent)]">
-              {block.kind === 'DOUBLE' ? 'Double' : 'Single'} {i + 1}
+              {block.kind === 'DOUBLE' ? t('champ.double') : t('champ.single')} {i + 1}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <SideSlots
@@ -123,7 +125,7 @@ export function FixtureComposer({
         disabled={!complete || busy}
         onClick={validate}
       >
-        {busy ? 'Starting…' : block.start === 0 ? 'Start encounter ▶' : 'Continue ▶'}
+        {busy ? t('champ.starting') : block.start === 0 ? t('champ.startEncounter') : t('champ.continue')}
       </Button>
     </div>
   );

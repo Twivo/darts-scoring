@@ -1,6 +1,7 @@
 import { useGame } from '@/store/GameContext';
 import { cn } from '@/lib/cn';
 import { participantLabel } from '@/domain/presentation';
+import { useT } from '@/store/LangContext';
 
 /**
  * Scoreboard with the big central remaining score.
@@ -21,6 +22,7 @@ export function ScoreBoard({
   onCommit: () => void;
 }) {
   const { config, state } = useGame();
+  const { t } = useT();
   const { activeParticipantId, remaining, legsWon, stats } = state;
 
   return (
@@ -51,9 +53,9 @@ export function ScoreBoard({
                 {remaining[p.id] ?? 0}
               </div>
               <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--color-text-dim)]">
-                <span>avg {s ? s.average3.toFixed(1) : '0.0'}</span>
+                <span>{t('game.avg')} {s ? s.average3.toFixed(1) : '0.0'}</span>
                 <span className="text-[var(--color-text-mute)]">·</span>
-                <span>{s ? s.totalDarts : 0} darts</span>
+                <span>{s ? s.totalDarts : 0} {t('game.darts')}</span>
               </div>
             </div>
           );
@@ -70,7 +72,7 @@ export function ScoreBoard({
         )}
       >
         <div className="text-[10px] uppercase tracking-wide text-[var(--color-text-dim)]">
-          {hasInput ? 'Remaining (tap to validate)' : 'Remaining'}
+          {hasInput ? t('game.remainingTap') : t('game.remaining')}
         </div>
         <div
           className={cn(

@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import { cn } from '@/lib/cn';
 import { useRoster } from '@/store/RosterContext';
+import { useT } from '@/store/LangContext';
 
 type SortKey = 'name' | 'createdAt';
 
 export function AdminPlayers() {
   const confirm = useConfirm();
+  const { t } = useT();
   const {
     players,
     loading,
@@ -33,7 +35,7 @@ export function AdminPlayers() {
     try {
       await fn();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : 'Action failed');
+      setActionError(e instanceof Error ? e.message : t('admin.actionFailed'));
     } finally {
       setBusy(false);
     }
@@ -74,11 +76,11 @@ export function AdminPlayers() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submitAdd()}
-          placeholder="New player name"
+          placeholder={t('admin.newPlayerName')}
           className="min-w-40 flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
         />
         <Button variant="accent" size="md" onClick={submitAdd} disabled={busy}>
-          Add player
+          {t('admin.addPlayer')}
         </Button>
       </div>
 
@@ -86,19 +88,19 @@ export function AdminPlayers() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search…"
+          placeholder={t('common.search')}
           className="min-w-40 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
         />
         <div className="flex gap-1 text-xs">
           <SortChip active={sortKey === 'name'} dir={sortDir} onClick={() => toggleSort('name')}>
-            Name
+            {t('admin.name')}
           </SortChip>
           <SortChip
             active={sortKey === 'createdAt'}
             dir={sortDir}
             onClick={() => toggleSort('createdAt')}
           >
-            Added
+            {t('admin.added')}
           </SortChip>
         </div>
       </div>
@@ -110,10 +112,10 @@ export function AdminPlayers() {
       )}
 
       {loading ? (
-        <p className="py-6 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-6 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : visible.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center text-[var(--color-text-dim)]">
-          {players.length === 0 ? 'No players yet.' : 'No match.'}
+          {players.length === 0 ? t('admin.noPlayers') : t('admin.noMatch')}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -160,7 +162,7 @@ export function AdminPlayers() {
                   {p.name}
                   {!p.active && (
                     <span className="ml-2 text-xs text-[var(--color-text-mute)]">
-                      (inactive)
+                      ({t('admin.inactive')})
                     </span>
                   )}
                 </button>
@@ -176,22 +178,21 @@ export function AdminPlayers() {
                     : 'text-[var(--color-success)] hover:bg-[var(--color-surface-2)]',
                 )}
               >
-                {p.active ? 'Deactivate' : 'Activate'}
+                {p.active ? t('admin.deactivate') : t('admin.activate')}
               </button>
               <button
                 onClick={async () => {
                   const ok = await confirm({
-                    title: `Delete ${p.name}?`,
-                    message:
-                      'If this player has recorded matches, deletion is blocked — deactivate instead.',
+                    title: t('admin.deletePlayerTitle').replace('{name}', p.name),
+                    message: t('admin.deletePlayerMessage'),
                     danger: true,
-                    confirmLabel: 'Delete',
+                    confirmLabel: t('common.delete'),
                   });
                   if (ok) void run(() => removePlayer(p.id));
                 }}
                 disabled={busy}
                 className="rounded-lg px-2.5 py-1.5 text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
-                aria-label="Delete"
+                aria-label={t('common.delete')}
               >
                 ✕
               </button>

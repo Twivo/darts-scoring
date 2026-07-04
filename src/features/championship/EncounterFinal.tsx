@@ -6,6 +6,7 @@ import {
   type PlayerSeasonStats,
 } from '@/domain/playerStats';
 import { Confetti } from '@/features/stats/Confetti';
+import { useT } from '@/store/LangContext';
 import type { EncounterRecord } from '@/data/types';
 
 /** Final encounter screen: winner, team + individual stats, MVP and records. */
@@ -16,6 +17,7 @@ export function EncounterFinal({
   encounter: EncounterRecord;
   onFinish: () => void;
 }) {
+  const { t } = useT();
   const repo = useMemo(() => getRepository(), []);
   const [stats, setStats] = useState<PlayerSeasonStats[]>([]);
 
@@ -44,7 +46,7 @@ export function EncounterFinal({
       ? teams.A.name
       : encounter.winner === 'B'
         ? teams.B.name
-        : 'Draw';
+        : t('champ.draw');
 
   const best = (pick: (s: PlayerSeasonStats) => number) =>
     stats.reduce<PlayerSeasonStats | null>(
@@ -87,7 +89,7 @@ export function EncounterFinal({
                 {side === 'A' ? encounter.scoreA : encounter.scoreB}
               </div>
               <div className="text-xs text-[var(--color-text-dim)]">
-                team avg {teamAvg(side).toFixed(1)}
+                {t('champ.teamAvg').replace('{value}', teamAvg(side).toFixed(1))}
               </div>
             </div>
           ))}
@@ -95,21 +97,31 @@ export function EncounterFinal({
 
         {/* records */}
         <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Record label="MVP (avg)" who={mvp ? nameOf(mvp.playerId) : '—'} value={mvp ? mvp.average3.toFixed(1) : '—'} />
-          <Record label="Best checkout" who={bestCheckout ? nameOf(bestCheckout.playerId) : '—'} value={bestCheckout ? `${bestCheckout.bestCheckout}` : '—'} />
-          <Record label="Best First 9" who={bestFirst9 ? nameOf(bestFirst9.playerId) : '—'} value={bestFirst9 ? bestFirst9.first9Average.toFixed(1) : '—'} />
-          <Record label="Most 180s" who={most180 ? nameOf(most180.playerId) : '—'} value={most180 ? `${most180.count180}` : '—'} />
+          <Record label={t('award.mvp')} who={mvp ? nameOf(mvp.playerId) : '—'} value={mvp ? mvp.average3.toFixed(1) : '—'} />
+          <Record label={t('award.bestCheckout')} who={bestCheckout ? nameOf(bestCheckout.playerId) : '—'} value={bestCheckout ? `${bestCheckout.bestCheckout}` : '—'} />
+          <Record label={t('award.bestFirst9')} who={bestFirst9 ? nameOf(bestFirst9.playerId) : '—'} value={bestFirst9 ? bestFirst9.first9Average.toFixed(1) : '—'} />
+          <Record label={t('award.most180s')} who={most180 ? nameOf(most180.playerId) : '—'} value={most180 ? `${most180.count180}` : '—'} />
         </div>
 
         {/* individual stats */}
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-          Individual statistics
+          {t('champ.individualStats')}
         </h2>
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--color-surface-2)]">
-                {['Player', '3-dart', 'First 9', 'Best CO', '180', '140+', '100+', 'Legs', 'Darts'].map((h) => (
+                {[
+                  t('stats.row.player'),
+                  t('stats.row.avg'),
+                  t('stats.row.first9'),
+                  t('stats.row.bestCheckout'),
+                  t('stats.row.180'),
+                  t('stats.row.140'),
+                  t('stats.row.100'),
+                  t('stats.row.legs'),
+                  t('stats.row.darts'),
+                ].map((h) => (
                   <th key={h} className="px-2.5 py-2 text-right font-semibold first:text-left">
                     {h}
                   </th>
@@ -135,7 +147,7 @@ export function EncounterFinal({
         </div>
 
         <Button variant="accent" size="xl" fullWidth className="mt-6" onClick={onFinish}>
-          Finish encounter
+          {t('champ.finishEncounter')}
         </Button>
       </div>
     </div>

@@ -4,9 +4,11 @@ import { useConfirm } from '@/components/ui/ConfirmProvider';
 import { getRepository } from '@/data';
 import type { TeamWithPlayers } from '@/data/types';
 import { useRoster } from '@/store/RosterContext';
+import { useT } from '@/store/LangContext';
 
 export function AdminTeams() {
   const confirm = useConfirm();
+  const { t: tr } = useT();
   const repo = useMemo(() => getRepository(), []);
   const { players } = useRoster();
 
@@ -26,7 +28,7 @@ export function AdminTeams() {
     try {
       setTeams(await repo.listTeams());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load teams');
+      setError(e instanceof Error ? e.message : tr('admin.failedLoadTeams'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export function AdminTeams() {
       await fn();
       await reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Action failed');
+      setError(e instanceof Error ? e.message : tr('admin.actionFailed'));
     } finally {
       setBusy(false);
     }
@@ -92,7 +94,7 @@ export function AdminTeams() {
               });
             }
           }}
-          placeholder="New team name"
+          placeholder={tr('admin.newTeamName')}
           className="min-w-40 flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 outline-none focus:border-[var(--color-accent)]"
         />
         <Button
@@ -106,14 +108,14 @@ export function AdminTeams() {
             })
           }
         >
-          Add team
+          {tr('admin.addTeam')}
         </Button>
       </div>
 
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search teams…"
+        placeholder={tr('admin.searchTeams')}
         className="mb-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
       />
 
@@ -124,10 +126,10 @@ export function AdminTeams() {
       )}
 
       {loading ? (
-        <p className="py-6 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-6 text-center text-[var(--color-text-dim)]">{tr('common.loading')}</p>
       ) : visible.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center text-[var(--color-text-dim)]">
-          {teams.length === 0 ? 'No teams yet.' : 'No match.'}
+          {teams.length === 0 ? tr('admin.noTeams') : tr('admin.noMatch')}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -166,8 +168,8 @@ export function AdminTeams() {
                     >
                       <span className="text-lg font-semibold">{t.name}</span>
                       <span className="ml-2 text-xs text-[var(--color-text-dim)]">
-                        {t.playerIds.length} player
-                        {t.playerIds.length === 1 ? '' : 's'}
+                        {tr(t.playerIds.length === 1 ? 'admin.playerCount' : 'admin.playerCountPlural')
+                          .replace('{count}', String(t.playerIds.length))}
                       </span>
                     </button>
                   )}
@@ -175,19 +177,19 @@ export function AdminTeams() {
                     onClick={() => setExpandedId(expanded ? null : t.id)}
                     className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
                   >
-                    {expanded ? 'Close' : 'Players'}
+                    {expanded ? tr('common.close') : tr('admin.playersButton')}
                   </button>
                   <button
                     onClick={async () => {
                       const ok = await confirm({
-                        title: `Delete ${t.name}?`,
+                        title: tr('admin.deleteTeamTitle').replace('{name}', t.name),
                         danger: true,
-                        confirmLabel: 'Delete',
+                        confirmLabel: tr('common.delete'),
                       });
                       if (ok) void run(() => repo.deleteTeam(t.id));
                     }}
                     className="rounded-lg px-2.5 py-1.5 text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
-                    aria-label="Delete team"
+                    aria-label={tr('common.delete')}
                   >
                     ✕
                   </button>
@@ -208,7 +210,7 @@ export function AdminTeams() {
                               disabled={busy}
                               onClick={() => removeMember(t, pid)}
                               className="text-white/80 hover:text-white"
-                              aria-label="Remove player"
+                              aria-label={tr('setup.removePlayer')}
                             >
                               ✕
                             </button>
@@ -217,7 +219,7 @@ export function AdminTeams() {
                       </div>
                     ) : (
                       <p className="mb-3 text-xs text-[var(--color-text-dim)]">
-                        No members yet.
+                        {tr('admin.noMembers')}
                       </p>
                     )}
 
@@ -229,7 +231,7 @@ export function AdminTeams() {
                         onChange={(e) => addMember(t, e.target.value)}
                         className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                       >
-                        <option value="">+ Add a player…</option>
+                        <option value="">{tr('admin.addAPlayer')}</option>
                         {players
                           .filter((p) => !taken.has(p.id))
                           .map((p) => (
@@ -239,7 +241,7 @@ export function AdminTeams() {
                           ))}
                       </select>
                       <span className="text-xs text-[var(--color-text-mute)]">
-                        A player can be on one team only.
+                        {tr('admin.oneTeamOnly')}
                       </span>
                     </div>
                   </div>

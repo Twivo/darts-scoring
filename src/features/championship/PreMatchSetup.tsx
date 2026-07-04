@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import type { EncounterRecord } from '@/data/types';
 import type { Fixture, Side } from '@/domain/championship/types';
 
@@ -20,6 +21,7 @@ export function PreMatchSetup({
   onConfirm: (v: { aOrder: string[]; bOrder: string[]; starter: Side }) => void;
   onBack: () => void;
 }) {
+  const { t } = useT();
   const { teams } = encounter.plan;
   const isDouble = fixture.kind === 'DOUBLE';
   const per = isDouble ? 2 : 1;
@@ -47,19 +49,19 @@ export function PreMatchSetup({
           onClick={onBack}
           className="mb-1 self-start rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
         >
-          ↩ Previous match
+          {t('champ.previousMatch')}
         </button>
       )}
       <div className="mb-4 text-center">
         <div className="text-xs uppercase tracking-wide text-[var(--color-text-dim)]">
-          Match {fixture.index + 1} · {isDouble ? 'Doubles' : 'Singles'}
+          {t('common.match')} {fixture.index + 1} · {t(isDouble ? 'game.doubles' : 'game.singles')}
         </div>
-        <h2 className="text-xl font-black">Bull-up</h2>
+        <h2 className="text-xl font-black">{t('champ.bullUp')}</h2>
       </div>
 
       {/* players (settable / changeable here at any time) */}
       <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-        Players{isDouble ? ' (throwing order)' : ''}
+        {isDouble ? t('champ.playersOrder') : t('champ.players')}
       </h3>
       <div className="mb-4 grid grid-cols-2 gap-3">
         {(['A', 'B'] as Side[]).map((side) => (
@@ -75,7 +77,7 @@ export function PreMatchSetup({
       </div>
 
       <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-        Who won the bull and starts?
+        {t('champ.whoWonBull')}
       </h3>
       <div className="grid grid-cols-2 gap-3">
         {(['A', 'B'] as Side[]).map((side) => {
@@ -103,7 +105,10 @@ export function PreMatchSetup({
 
       {!complete && (
         <p className="mt-3 text-center text-xs text-[var(--color-warning)]">
-          Select {isDouble ? 'two players' : 'a player'} for each team to start.
+          {t('champ.selectPlayersToStart').replace(
+            '{text}',
+            t(isDouble ? 'champ.twoPlayers' : 'champ.onePlayer'),
+          )}
         </p>
       )}
 
@@ -115,7 +120,7 @@ export function PreMatchSetup({
         disabled={!complete || !starter}
         onClick={() => starter && onConfirm({ aOrder, bOrder, starter })}
       >
-        Start match ▶
+        {t('champ.startMatch')}
       </Button>
     </div>
   );
@@ -134,6 +139,7 @@ function SidePicker({
   count: number;
   onChange: (slot: number, value: string) => void;
 }) {
+  const { t } = useT();
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       <div className="mb-1.5 truncate text-xs font-semibold text-[var(--color-text-dim)]">
@@ -147,7 +153,11 @@ function SidePicker({
             onChange={(e) => onChange(slot, e.target.value)}
             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
           >
-            <option value="">{count > 1 ? `Player ${slot + 1}` : 'Select player'}</option>
+            <option value="">
+              {count > 1
+                ? t('setup.playerSlot').replace('{number}', String(slot + 1))
+                : t('champ.selectPlayer')}
+            </option>
             {players.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}

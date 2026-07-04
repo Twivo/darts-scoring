@@ -9,6 +9,7 @@ import {
 } from '@/store/encounterService';
 import { loadMatch, persistMatch } from '@/store/matchService';
 import { buildEncounterState } from '@/domain/championship/encounter';
+import { useT } from '@/store/LangContext';
 import type { EncounterRecord } from '@/data/types';
 import type { Side } from '@/domain/championship/types';
 import { EncounterHeader } from './EncounterHeader';
@@ -22,6 +23,7 @@ import { EncounterFinal } from './EncounterFinal';
 export function ChampionshipRoute() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useT();
   const [encounter, setEncounter] = useState<EncounterRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [configOpen, setConfigOpen] = useState(false);
@@ -43,7 +45,7 @@ export function ChampionshipRoute() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-[var(--color-text-dim)]">
-        Loading encounter…
+        {t('champ.loadingEncounter')}
       </div>
     );
   }
@@ -60,9 +62,9 @@ export function ChampionshipRoute() {
             onClick={() => navigate('/')}
             className="rounded-md px-2 py-1 text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
           >
-            ← Home
+            {t('common.home')}
           </button>
-          <span className="font-semibold">Championship</span>
+          <span className="font-semibold">{t('admin.championship')}</span>
           <span className="w-14" />
         </div>
       )}

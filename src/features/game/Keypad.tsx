@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { useLongPress } from '@/hooks/useLongPress';
+import { useT } from '@/store/LangContext';
 
 const QUICK_LEFT = [26, 41, 45, 59];
 const QUICK_RIGHT = [60, 81, 99, 100];
@@ -40,6 +41,7 @@ export function Keypad({
   onFinishWith: (darts: number) => void;
   disabled?: boolean;
 }) {
+  const { t } = useT();
   const hasInput = buffer !== '';
   const canBust = remainingBefore <= 180;
 
@@ -64,10 +66,10 @@ export function Keypad({
           <span className="text-2xl font-black tnum tracking-wider">{buffer}</span>
         ) : onFinish ? (
           <span className="text-sm font-semibold text-[var(--color-success)]">
-            Finish — hold 1 / 2 / 3 for the darts used
+            {t('game.finishHint')}
           </span>
         ) : (
-          <span className="text-sm text-[var(--color-text-mute)]">Type a score</span>
+          <span className="text-sm text-[var(--color-text-mute)]">{t('game.typeScore')}</span>
         )}
       </div>
 
@@ -131,7 +133,7 @@ export function Keypad({
             disabled={disabled}
             className="flex-1 rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-2)] py-2.5 text-xl font-black transition-all active:scale-95 disabled:opacity-40"
           >
-            Miss
+            {t('game.miss')}
           </button>
         ) : (
           QUICK_BOTTOM.map((v) => (
@@ -151,7 +153,7 @@ export function Keypad({
             disabled={disabled}
             className="flex-[1.2] rounded-xl border-2 border-[var(--color-accent)] bg-[var(--color-accent-soft)] py-2.5 text-xl font-black text-[var(--color-accent-hover)] transition-all active:scale-95 disabled:opacity-40"
           >
-            BUST
+            {t('game.bust')}
           </button>
         )}
       </div>
@@ -162,7 +164,7 @@ export function Keypad({
         disabled={disabled || !hasInput}
         className="mt-1.5 w-full rounded-2xl bg-white py-3.5 text-2xl font-black text-black transition-all active:scale-[0.99] disabled:opacity-30"
       >
-        VALIDATE
+        {t('game.validate').toUpperCase()}
       </button>
     </div>
   );
@@ -218,8 +220,13 @@ function FinishKey({
     >
       {digit}
       <span className="absolute bottom-0.5 text-[8px] font-semibold uppercase opacity-80">
-        hold
+        <FinishHoldLabel />
       </span>
     </button>
   );
+}
+
+function FinishHoldLabel() {
+  const { t } = useT();
+  return <>{t('game.hold')}</>;
 }

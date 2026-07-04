@@ -49,7 +49,7 @@ export function HomeScreen() {
     const state = buildGameState(m.config, m.events);
     const sides = m.config.participants
       .map((p) => participantLabel(m.config, p.id))
-      .join(' vs ');
+      .join(` ${t('common.vs')} `);
     const legs = Object.values(state.legsWon).join(' – ');
     return { sides, legs };
   };
@@ -82,7 +82,7 @@ export function HomeScreen() {
               >
                 <span>
                   <span className="block font-semibold">
-                    {e.plan.teams.A.name} vs {e.plan.teams.B.name}
+                    {e.plan.teams.A.name} {t('common.vs')} {e.plan.teams.B.name}
                   </span>
                   <span className="text-xs text-[var(--color-text-dim)]">
                     {e.scoreA} – {e.scoreB} · {t('home.match')}{' '}
@@ -118,8 +118,8 @@ export function HomeScreen() {
                   <span>
                     <span className="block font-semibold">{sides}</span>
                     <span className="text-xs text-[var(--color-text-dim)]">
-                      {m.variant} {m.mode === 'DOUBLE' ? 'Doubles' : 'Singles'} ·
-                      legs {legs}
+                      {m.variant} {t(m.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles')} ·
+                      {t('game.legs')} {legs}
                     </span>
                   </span>
                   <span className="text-sm font-bold text-[var(--color-accent)]">
@@ -165,16 +165,6 @@ export function HomeScreen() {
         )}
       </Button>
 
-      <div className="flex w-full items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <QrCode value={liveUrl} size={104} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">{t('live.scan')}</p>
-          <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
-            {t('home.live')}
-          </p>
-        </div>
-      </div>
-
       <Button
         variant="surface"
         size="lg"
@@ -183,6 +173,16 @@ export function HomeScreen() {
       >
         {t('home.admin')}
       </Button>
+
+      <div className="flex w-full items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <QrCode value={liveUrl} size={104} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">{t('live.scanShort')}</p>
+          <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
+            {t('home.live')}
+          </p>
+        </div>
+      </div>
 
       {!loaded && (
         <p className="text-xs text-[var(--color-text-mute)]">{t('home.syncing')}</p>

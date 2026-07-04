@@ -1,6 +1,7 @@
 import type { GameState, ResolvedVisit } from '@/domain/types';
 import { participantDisplay, playerName } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 
 export interface EncounterContext {
   aName: string;
@@ -23,6 +24,7 @@ export function LiveBoard({
   state: GameState;
   encounter?: EncounterContext | null;
 }) {
+  const { t } = useT();
   const { config } = state;
   const parts = config.participants;
   const [p0, p1] = parts;
@@ -53,16 +55,16 @@ export function LiveBoard({
       <div className="flex items-center justify-between px-1">
         {over ? (
           <span className="inline-flex items-center gap-2 rounded-md bg-[var(--color-success-dim)] px-2.5 py-1 text-xs font-bold text-[var(--color-success)]">
-            FINAL
+            {t('common.final').toUpperCase()}
           </span>
         ) : (
           <span className="inline-flex items-center gap-2 rounded-md bg-[var(--color-accent)] px-2.5 py-1 text-xs font-bold tracking-wide text-white">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-            LIVE
+            {t('common.live').toUpperCase()}
           </span>
         )}
         <span className="text-xs text-[var(--color-text-dim)]">
-          {config.variant} Double Out · first to {config.legsToWin}
+          {config.variant} {t('game.doubleOut')} · {t('game.firstTo')} {config.legsToWin}
         </span>
       </div>
 
@@ -105,12 +107,12 @@ export function LiveBoard({
                 </span>
                 {isActive && (
                   <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-accent)]">
-                    ▸ throwing
+                    ▸ {t('game.throwing')}
                   </span>
                 )}
                 {isWinner && (
                   <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-success)]">
-                    winner
+                    {t('game.winner')}
                   </span>
                 )}
               </div>
@@ -119,13 +121,13 @@ export function LiveBoard({
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--color-text-dim)]">
                 <span>
-                  legs{' '}
+                  {t('game.legs')}{' '}
                   <b className="font-bold text-[var(--color-text)]">
                     {state.legsWon[p.id] ?? 0}
                   </b>
                 </span>
                 <span>
-                  avg{' '}
+                  {t('game.avg')}{' '}
                   <b className="font-bold text-[var(--color-text)]">
                     {s ? s.average3.toFixed(1) : '0.0'}
                   </b>
@@ -133,12 +135,15 @@ export function LiveBoard({
               </div>
               {config.mode === 'DOUBLE' && isActive && (
                 <div className="mt-1 text-xs text-[var(--color-accent)]">
-                  {playerName(config, state.activePlayerId)} to throw
+                  {t('game.toThrow').replace(
+                    '{player}',
+                    playerName(config, state.activePlayerId),
+                  )}
                 </div>
               )}
               {onFinish && (
                 <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-[var(--color-accent-soft)] px-2 py-1 text-[11px] font-semibold text-[var(--color-warning)]">
-                  🎯 checkout {rem}
+                  🎯 {t('game.checkout').replace('{score}', String(rem))}
                 </div>
               )}
             </div>
@@ -149,8 +154,10 @@ export function LiveBoard({
       {p0 && p1 && rounds > 0 && (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2">
           <div className="mb-1 flex justify-between px-2 text-[10px] uppercase tracking-wide text-[var(--color-text-dim)]">
-            <span>visits · leg {state.currentLegIndex + 1}</span>
-            <span>score · left</span>
+            <span>
+              {t('game.visitsLeg').replace('{leg}', String(state.currentLegIndex + 1))}
+            </span>
+            <span>{t('game.scoreLeft')}</span>
           </div>
           <div className="flex flex-col">
             {Array.from({ length: rounds }).map((_, i) => {
@@ -163,11 +170,11 @@ export function LiveBoard({
                     last && 'rounded-lg bg-[var(--color-surface-2)]',
                   )}
                 >
-                  <VisitCell v={visitsByPart[p0.id]?.[i]} align="right" />
+                  <VisitCell v={visitsByPart[p0.id]?.[i]} align="right" bustLabel={t('game.bust')} />
                   <div className="w-7 shrink-0 text-center text-[10px] text-[var(--color-text-mute)]">
                     {i + 1}
                   </div>
-                  <VisitCell v={visitsByPart[p1.id]?.[i]} align="left" />
+                  <VisitCell v={visitsByPart[p1.id]?.[i]} align="left" bustLabel={t('game.bust')} />
                 </div>
               );
             })}
@@ -181,9 +188,11 @@ export function LiveBoard({
 function VisitCell({
   v,
   align,
+  bustLabel,
 }: {
   v: { effectiveScore: number; remainingAfter: number; isBust: boolean } | undefined;
   align: 'left' | 'right';
+  bustLabel: string;
 }) {
   return (
     <div
@@ -192,7 +201,7 @@ function VisitCell({
       {v ? (
         <>
           <span className={cn('font-semibold', v.isBust && 'text-[var(--color-text-dim)]')}>
-            {v.isBust ? 'BUST' : v.effectiveScore}
+            {v.isBust ? bustLabel : v.effectiveScore}
           </span>{' '}
           <span className="text-[11px] text-[var(--color-text-mute)]">
             {v.remainingAfter}

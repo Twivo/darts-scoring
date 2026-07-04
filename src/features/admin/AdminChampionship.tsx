@@ -3,6 +3,7 @@ import { getRepository } from '@/data';
 import { buildGameState } from '@/domain/engine';
 import { participantDisplay } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import { MatchDetail } from './MatchDetail';
 import type { EncounterRecord, MatchRecord, Season } from '@/data/types';
 
@@ -12,6 +13,7 @@ import type { EncounterRecord, MatchRecord, Season } from '@/data/types';
  * (reuses the normal MatchDetail — forfeits included).
  */
 export function AdminChampionship() {
+  const { t } = useT();
   const repo = useMemo(() => getRepository(), []);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState('');
@@ -49,7 +51,7 @@ export function AdminChampionship() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <label className="text-[var(--color-text-dim)]">Season</label>
+        <label className="text-[var(--color-text-dim)]">{t('admin.season')}</label>
         <select
           value={seasonId}
           onChange={(e) => setSeasonId(e.target.value)}
@@ -58,20 +60,20 @@ export function AdminChampionship() {
           {seasons.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-              {s.isCurrent ? ' (current)' : ''}
+              {s.isCurrent ? ` (${t('common.current')})` : ''}
             </option>
           ))}
         </select>
         <span className="ml-auto text-[var(--color-text-dim)]">
-          {encounters.length} encounters
+          {encounters.length} {t('common.encounters')}
         </span>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-8 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : encounters.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center text-[var(--color-text-dim)]">
-          No championship encounters this season yet.
+          {t('champ.noEncounters')}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -96,17 +98,17 @@ export function AdminChampionship() {
                         : 'bg-[var(--color-surface-2)] text-[var(--color-text-dim)]',
                     )}
                   >
-                    {e.status === 'FINISHED' ? 'Final' : 'Live'}
+                    {e.status === 'FINISHED' ? t('common.final') : t('common.live')}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">
-                      {e.plan.teams.A.name} vs {e.plan.teams.B.name}
+                      {e.plan.teams.A.name} {t('common.vs')} {e.plan.teams.B.name}
                     </span>
                     <span className="text-xs text-[var(--color-text-dim)]">
                       {e.createdAt
                         ? new Date(e.createdAt).toLocaleDateString()
                         : ''}
-                      {winnerName ? ` · winner ${winnerName}` : ''}
+                      {winnerName ? ` · ${t('common.winner')} ${winnerName}` : ''}
                     </span>
                   </span>
                   <span className="text-lg font-black tnum">
@@ -130,6 +132,7 @@ function EncounterMatches({
   encounter: EncounterRecord;
   onBack: () => void;
 }) {
+  const { t } = useT();
   const repo = useMemo(() => getRepository(), []);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,7 +160,7 @@ function EncounterMatches({
           onClick={onBack}
           className="rounded-lg px-2 py-1 text-sm text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
         >
-          ← Encounters
+          {t('common.back')} {t('common.encounters')}
         </button>
         <h2 className="text-lg font-black">
           {teams.A.name} {encounter.scoreA}–{encounter.scoreB} {teams.B.name}
@@ -165,7 +168,7 @@ function EncounterMatches({
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-8 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {matches.map((m) => {
@@ -187,20 +190,20 @@ function EncounterMatches({
                   className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left transition-colors hover:border-[var(--color-accent)]"
                 >
                   <span className="w-14 shrink-0 text-xs font-bold text-[var(--color-accent)]">
-                    {m.mode === 'DOUBLE' ? 'Double' : 'Single'}
+                    {m.mode === 'DOUBLE' ? t('champ.double') : t('champ.single')}
                     <br />#{(m.fixtureIndex ?? 0) + 1}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">
                       {m.config.participants
                         .map((p) => participantDisplay(m.config, p.id))
-                        .join('  vs  ')}
+                        .join(`  ${t('common.vs')}  `)}
                     </span>
                     <span className="text-xs text-[var(--color-text-dim)]">
-                      {winnerLabel ? `winner ${winnerLabel}` : 'in progress'}
+                      {winnerLabel ? `${t('common.winner')} ${winnerLabel}` : t('common.inProgress')}
                       {forfeit && (
                         <span className="ml-1 text-[var(--color-warning)]">
-                          · forfeit
+                          · {t('common.forfeit')}
                         </span>
                       )}
                     </span>

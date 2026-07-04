@@ -6,6 +6,7 @@ import {
   type PlayerSeasonStats,
 } from '@/domain/playerStats';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import type { MatchRecord, Season } from '@/data/types';
 
 /**
@@ -15,6 +16,7 @@ import type { MatchRecord, Season } from '@/data/types';
  */
 export function SeasonReview() {
   const navigate = useNavigate();
+  const { t } = useT();
   const repo = useMemo(() => getRepository(), []);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState('');
@@ -73,12 +75,12 @@ export function SeasonReview() {
       .map((s) => ({ s, value: fmt(s) }));
 
   const awards = [
-    { icon: '⭐', label: 'MVP (3-dart avg)', s: top((x) => x.average3), fmt: (x: PlayerSeasonStats) => x.average3.toFixed(1) },
-    { icon: '🎯', label: 'Best checkout', s: top((x) => x.bestCheckout), fmt: (x: PlayerSeasonStats) => `${x.bestCheckout}` },
-    { icon: '💯', label: 'Most 180s', s: top((x) => x.count180), fmt: (x: PlayerSeasonStats) => `${x.count180}` },
-    { icon: '🚀', label: 'Best First 9', s: top((x) => x.first9Average), fmt: (x: PlayerSeasonStats) => x.first9Average.toFixed(1) },
-    { icon: '🏁', label: 'Most legs won', s: top((x) => x.legsWon), fmt: (x: PlayerSeasonStats) => `${x.legsWon}` },
-    { icon: '🥇', label: 'Most wins', s: top((x) => x.matchesWon), fmt: (x: PlayerSeasonStats) => `${x.matchesWon}` },
+    { icon: '⭐', label: t('award.mvp'), s: top((x) => x.average3), fmt: (x: PlayerSeasonStats) => x.average3.toFixed(1) },
+    { icon: '🎯', label: t('award.bestCheckout'), s: top((x) => x.bestCheckout), fmt: (x: PlayerSeasonStats) => `${x.bestCheckout}` },
+    { icon: '💯', label: t('award.most180s'), s: top((x) => x.count180), fmt: (x: PlayerSeasonStats) => `${x.count180}` },
+    { icon: '🚀', label: t('award.bestFirst9'), s: top((x) => x.first9Average), fmt: (x: PlayerSeasonStats) => x.first9Average.toFixed(1) },
+    { icon: '🏁', label: t('award.mostLegsWon'), s: top((x) => x.legsWon), fmt: (x: PlayerSeasonStats) => `${x.legsWon}` },
+    { icon: '🥇', label: t('award.mostWins'), s: top((x) => x.matchesWon), fmt: (x: PlayerSeasonStats) => `${x.matchesWon}` },
   ];
 
   const seasonName = seasons.find((s) => s.id === seasonId)?.name ?? '';
@@ -86,7 +88,7 @@ export function SeasonReview() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h2 className="text-2xl font-black">🏆 Season review</h2>
+        <h2 className="text-2xl font-black">{t('admin.seasonReviewTitle')}</h2>
         <select
           value={seasonId}
           onChange={(e) => setSeasonId(e.target.value)}
@@ -95,20 +97,23 @@ export function SeasonReview() {
           {seasons.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-              {s.isCurrent ? ' (current)' : ''}
+              {s.isCurrent ? ` (${t('common.current')})` : ''}
             </option>
           ))}
         </select>
         <span className="ml-auto text-sm text-[var(--color-text-dim)]">
-          {matches.length} matches · {encounters} encounters · {stats.length} players
+          {t('admin.reviewCounts')
+            .replace('{matches}', String(matches.length))
+            .replace('{encounters}', String(encounters))
+            .replace('{players}', String(stats.length))}
         </span>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-8 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : stats.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-10 text-center text-[var(--color-text-dim)]">
-          No championship match played in {seasonName || 'this season'} yet.
+          {t('admin.noSeasonMatches').replace('{season}', seasonName || t('common.thisSeason'))}
         </p>
       ) : (
         <>
@@ -136,17 +141,17 @@ export function SeasonReview() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Leaderboard
-              title="Top averages"
+              title={t('admin.topAverages')}
               rows={board((s) => s.average3, (s) => s.average3.toFixed(1))}
               onPick={(id) => navigate(`/admin/players/${id}`)}
             />
             <Leaderboard
-              title="Most 180s"
+              title={t('admin.most180s')}
               rows={board((s) => s.count180, (s) => `${s.count180}`)}
               onPick={(id) => navigate(`/admin/players/${id}`)}
             />
             <Leaderboard
-              title="Most legs won"
+              title={t('admin.mostLegsWon')}
               rows={board((s) => s.legsWon, (s) => `${s.legsWon}`)}
               onPick={(id) => navigate(`/admin/players/${id}`)}
             />

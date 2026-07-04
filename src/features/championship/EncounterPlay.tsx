@@ -3,6 +3,7 @@ import { GameProvider } from '@/store/GameContext';
 import { GameScreen } from '@/features/game/GameScreen';
 import { launchFixture, persistEncounter } from '@/store/encounterService';
 import { loadMatch } from '@/store/matchService';
+import { useT } from '@/store/LangContext';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 import type { Fixture, Side } from '@/domain/championship/types';
 import { PreMatchSetup } from './PreMatchSetup';
@@ -21,6 +22,7 @@ export function EncounterPlay({
   onResult: (winner: Side) => void;
   onBack: () => void;
 }) {
+  const { t } = useT();
   const [match, setMatch] = useState<MatchRecord | null>(null);
 
   // Resume: if the match was already launched, load it and skip the bull screen.
@@ -83,7 +85,7 @@ export function EncounterPlay({
   if (!match) {
     return (
       <div className="flex flex-1 items-center justify-center text-[var(--color-text-dim)]">
-        Loading match…
+        {t('game.loadingMatch')}
       </div>
     );
   }
@@ -105,7 +107,7 @@ export function EncounterPlay({
         }}
         gameOverContent={
           <div className="flex flex-1 items-center justify-center text-[var(--color-text-dim)]">
-            Match finished — saving…
+            {t('champ.matchFinishedSaving')}
           </div>
         }
       />

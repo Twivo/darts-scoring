@@ -1,6 +1,7 @@
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { minDartsToCheckout } from '@/domain/rules/checkout';
+import { useT } from '@/store/LangContext';
 
 /**
  * Shown when the entered score finishes the leg (remaining hits 0).
@@ -26,19 +27,24 @@ export function LegEndModal({
   onConfirm: (darts: number) => void;
   onCancel: () => void;
 }) {
+  const { t } = useT();
   const minDarts = minDartsToCheckout(checkoutScore) ?? 1;
 
   return (
     <Modal open={open} onClose={onCancel} closeOnBackdrop={false}>
       <div className="text-center">
         <div className="mb-1 text-5xl">🎯</div>
-        <h2 className="text-2xl font-black">Leg {legNumber} complete!</h2>
+        <h2 className="text-2xl font-black">
+          {t('game.legComplete').replace('{leg}', String(legNumber))}
+        </h2>
         <p className="mt-1 text-[var(--color-accent)]">
-          {playerName} checked out {checkoutScore}
+          {t('game.checkedOut')
+            .replace('{player}', playerName)
+            .replace('{score}', String(checkoutScore))}
         </p>
 
         <p className="mt-5 mb-2 text-sm text-[var(--color-text-dim)]">
-          How many darts were used on this final visit?
+          {t('game.finalDartsQuestion')}
         </p>
         <div className="flex gap-2">
           {[1, 2, 3].map((d) => {
@@ -52,7 +58,13 @@ export function LegEndModal({
                 disabled={impossible}
                 title={
                   impossible
-                    ? `${checkoutScore} cannot be checked out in ${d} dart${d > 1 ? 's' : ''}`
+                    ? t('game.cannotCheckoutInDarts')
+                        .replace('{score}', String(checkoutScore))
+                        .replace('{darts}', String(d))
+                        .replace(
+                          '{unit}',
+                          d > 1 ? t('game.darts') : t('game.dartSingular'),
+                        )
                     : undefined
                 }
                 onClick={() => onConfirm(d)}
@@ -64,7 +76,9 @@ export function LegEndModal({
         </div>
         {minDarts > 1 && (
           <p className="mt-2 text-xs text-[var(--color-text-dim)]">
-            {checkoutScore} needs at least {minDarts} darts to finish
+            {t('game.needsDarts')
+              .replace('{score}', String(checkoutScore))
+              .replace('{darts}', String(minDarts))}
           </p>
         )}
 
@@ -75,7 +89,7 @@ export function LegEndModal({
           className="mt-3"
           onClick={onCancel}
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
       </div>
     </Modal>

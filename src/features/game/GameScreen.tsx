@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/store/GameContext';
+import { useT } from '@/store/LangContext';
 import { useConfirm } from '@/components/ui/ConfirmProvider';
 import { playerName } from '@/domain/presentation';
 import {
   isOnFinish,
   validateVisitInput,
-  visitErrorMessage,
+  type VisitErrorCode,
 } from '@/domain/rules/validation';
 import { minDartsToCheckout } from '@/domain/rules/checkout';
 import { cn } from '@/lib/cn';
@@ -32,6 +33,7 @@ export function GameScreen({
 } = {}) {
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const { t } = useT();
   const { config, state, addVisit, addBust, undo, forfeitLeg, forfeitGame } =
     useGame();
 
@@ -88,13 +90,13 @@ export function GameScreen({
       if (!remainingValidation?.ok) {
         error =
           parsed > remainingBefore
-            ? `You can't leave more than ${remainingBefore}.`
+            ? t('validation.leaveMore').replace('{remaining}', String(remainingBefore))
             : parsed === 1
-              ? 'Cannot leave 1 — a double is required.'
-              : 'That visit would exceed 180.';
+              ? t('validation.leavesOne')
+              : t('validation.exceeds180');
       }
     } else if (scoreValidation && !scoreValidation.ok && scoreValidation.code) {
-      error = visitErrorMessage(scoreValidation.code, remainingBefore);
+      error = visitErrorText(t, scoreValidation.code, remainingBefore);
     }
   }
 
@@ -169,13 +171,13 @@ export function GameScreen({
   // --- forfeits ----------------------------------------------------------
   const forfeitCurrentLeg = async () => {
     const ok = await confirm({
-      title: 'Forfeit this leg?',
-      message: `The leg will be awarded to the opponent. ${playerName(
-        config,
-        state.activePlayerId,
-      )} forfeits.`,
+      title: t('game.forfeitLegTitle'),
+      message: t('game.forfeitLegMessage').replace(
+        '{player}',
+        playerName(config, state.activePlayerId),
+      ),
       danger: true,
-      confirmLabel: 'Forfeit leg',
+      confirmLabel: t('game.forfeitLeg'),
     });
     if (ok) {
       forfeitLeg(activeId);
@@ -185,11 +187,10 @@ export function GameScreen({
 
   const forfeitCurrentGame = async () => {
     const ok = await confirm({
-      title: 'Forfeit the match?',
-      message:
-        'The match ends immediately. The opponent wins and partial stats are generated.',
+      title: t('game.forfeitMatchTitle'),
+      message: t('game.forfeitMatchMessage'),
       danger: true,
-      confirmLabel: 'Forfeit match',
+      confirmLabel: t('game.forfeitMatch'),
     });
     if (ok) forfeitGame(activeId);
   };
@@ -209,26 +210,26 @@ export function GameScreen({
           onClick={() => navigate('/')}
           className="rounded-md px-2 py-1 text-[var(--color-text-dim)] hover:bg-[var(--color-surface-2)]"
         >
-          ← Home
+          {t('common.home')}
         </button>
         <div className="flex items-center gap-0.5">
           <button
             onClick={undo}
             className="rounded-md px-2 py-1 font-semibold hover:bg-[var(--color-surface-2)]"
           >
-            ↩ Undo
+            {t('game.undo')}
           </button>
           <button
             onClick={forfeitCurrentLeg}
             className="rounded-md px-2 py-1 text-[var(--color-warning)] hover:bg-[var(--color-surface-2)]"
           >
-            Forfeit leg
+            {t('game.forfeitLeg')}
           </button>
           <button
             onClick={forfeitCurrentGame}
             className="rounded-md px-2 py-1 text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
           >
-            Forfeit match
+            {t('game.forfeitMatch')}
           </button>
         </div>
       </div>
@@ -279,4 +280,29 @@ export function GameScreen({
       <EditVisitModal eventId={editingId} onClose={() => setEditingId(null)} />
     </div>
   );
+}
+
+function visitErrorText(
+  t: (key: string) => string,
+  code: VisitErrorCode,
+  remainingBefore: number,
+): string {
+  switch (code) {
+    case 'SCORE_RANGE':
+      return t('validation.scoreRange');
+    case 'IMPOSSIBLE_SCORE':
+      return t('validation.impossible');
+    case 'OVER_REMAINING':
+      return t('validation.overRemaining').replace(
+        '{remaining}',
+        String(remainingBefore),
+      );
+    case 'LEAVES_ONE':
+      return t('validation.leavesOne');
+    case 'INVALID_CHECKOUT':
+      return t('validation.invalidCheckout').replace(
+        '{remaining}',
+        String(remainingBefore),
+      );
+  }
 }

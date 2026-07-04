@@ -9,6 +9,7 @@ import {
 import { buildGameState } from '@/domain/engine';
 import { participantLabel } from '@/domain/presentation';
 import { cn } from '@/lib/cn';
+import { useT } from '@/store/LangContext';
 import { MatchDetail } from './MatchDetail';
 
 type Period = 'all' | 'today' | 'week' | 'month' | 'year' | 'custom';
@@ -16,28 +17,28 @@ type Period = 'all' | 'today' | 'week' | 'month' | 'year' | 'custom';
 /** Column registry — add a stat = add one entry here. Fully extensible. */
 interface Column {
   key: string;
-  label: string;
+  labelKey: string;
   get: (s: PlayerSeasonStats) => number;
   fmt: (s: PlayerSeasonStats) => string;
 }
 const COLUMNS: Column[] = [
-  { key: 'played', label: 'P', get: (s) => s.matchesPlayed, fmt: (s) => `${s.matchesPlayed}` },
-  { key: 'won', label: 'W', get: (s) => s.matchesWon, fmt: (s) => `${s.matchesWon}` },
-  { key: 'winpct', label: 'Win%', get: (s) => s.winRatio, fmt: (s) => `${(s.winRatio * 100).toFixed(0)}%` },
-  { key: 'legs', label: 'Legs', get: (s) => s.legsWon, fmt: (s) => `${s.legsWon}` },
-  { key: 'avg', label: '3-dart', get: (s) => s.average3, fmt: (s) => s.average3.toFixed(1) },
-  { key: 'first9', label: 'First 9', get: (s) => s.first9Average, fmt: (s) => s.first9Average.toFixed(1) },
-  { key: 'first3', label: 'First 3', get: (s) => s.first3Average, fmt: (s) => s.first3Average.toFixed(1) },
-  { key: 'coavg', label: 'Avg CO', get: (s) => s.averageCheckout, fmt: (s) => s.averageCheckout.toFixed(0) },
-  { key: 'cobest', label: 'Best CO', get: (s) => s.bestCheckout, fmt: (s) => `${s.bestCheckout}` },
-  { key: 't180', label: '180', get: (s) => s.count180, fmt: (s) => `${s.count180}` },
-  { key: 't140', label: '140+', get: (s) => s.count140plus, fmt: (s) => `${s.count140plus}` },
-  { key: 't100', label: '100+', get: (s) => s.count100plus, fmt: (s) => `${s.count100plus}` },
-  { key: 't60', label: '60+', get: (s) => s.count60plus, fmt: (s) => `${s.count60plus}` },
-  { key: 'busts', label: 'Busts', get: (s) => s.busts, fmt: (s) => `${s.busts}` },
-  { key: 'high', label: 'High', get: (s) => s.highestVisit, fmt: (s) => `${s.highestVisit}` },
-  { key: 'bestleg', label: 'Best leg', get: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? s.bestLegDarts : 999), fmt: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? `${s.bestLegDarts}` : '—') },
-  { key: 'darts', label: 'Darts', get: (s) => s.totalDarts, fmt: (s) => `${s.totalDarts}` },
+  { key: 'played', labelKey: 'stats.row.played', get: (s) => s.matchesPlayed, fmt: (s) => `${s.matchesPlayed}` },
+  { key: 'won', labelKey: 'stats.row.wonShort', get: (s) => s.matchesWon, fmt: (s) => `${s.matchesWon}` },
+  { key: 'winpct', labelKey: 'stats.row.winPct', get: (s) => s.winRatio, fmt: (s) => `${(s.winRatio * 100).toFixed(0)}%` },
+  { key: 'legs', labelKey: 'stats.row.legs', get: (s) => s.legsWon, fmt: (s) => `${s.legsWon}` },
+  { key: 'avg', labelKey: 'stats.row.avg', get: (s) => s.average3, fmt: (s) => s.average3.toFixed(1) },
+  { key: 'first9', labelKey: 'stats.row.first9', get: (s) => s.first9Average, fmt: (s) => s.first9Average.toFixed(1) },
+  { key: 'first3', labelKey: 'stats.row.first3', get: (s) => s.first3Average, fmt: (s) => s.first3Average.toFixed(1) },
+  { key: 'coavg', labelKey: 'stats.row.avgCheckout', get: (s) => s.averageCheckout, fmt: (s) => s.averageCheckout.toFixed(0) },
+  { key: 'cobest', labelKey: 'stats.row.bestCheckout', get: (s) => s.bestCheckout, fmt: (s) => `${s.bestCheckout}` },
+  { key: 't180', labelKey: 'stats.row.180', get: (s) => s.count180, fmt: (s) => `${s.count180}` },
+  { key: 't140', labelKey: 'stats.row.140', get: (s) => s.count140plus, fmt: (s) => `${s.count140plus}` },
+  { key: 't100', labelKey: 'stats.row.100', get: (s) => s.count100plus, fmt: (s) => `${s.count100plus}` },
+  { key: 't60', labelKey: 'stats.row.60', get: (s) => s.count60plus, fmt: (s) => `${s.count60plus}` },
+  { key: 'busts', labelKey: 'stats.row.bust', get: (s) => s.busts, fmt: (s) => `${s.busts}` },
+  { key: 'high', labelKey: 'stats.row.highShort', get: (s) => s.highestVisit, fmt: (s) => `${s.highestVisit}` },
+  { key: 'bestleg', labelKey: 'stats.row.bestLeg', get: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? s.bestLegDarts : 999), fmt: (s) => (s.bestLegDarts != null && s.bestLegDarts >= 9 ? `${s.bestLegDarts}` : '—') },
+  { key: 'darts', labelKey: 'stats.row.darts', get: (s) => s.totalDarts, fmt: (s) => `${s.totalDarts}` },
 ];
 
 function periodRange(period: Period, from: string, to: string): Partial<MatchQuery> {
@@ -70,6 +71,7 @@ function periodRange(period: Period, from: string, to: string): Partial<MatchQue
 
 export function AdminDashboard() {
   const navigate = useNavigate();
+  const { t } = useT();
   const repo = useMemo(() => getRepository(), []);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState('');
@@ -156,7 +158,7 @@ export function AdminDashboard() {
   // xlsx is imported lazily so it never weighs on the initial bundle.
   const exportXlsx = async () => {
     const XLSX = await import('xlsx');
-    const header = ['Player', ...COLUMNS.map((c) => c.label)];
+    const header = [t('stats.row.player'), ...COLUMNS.map((c) => t(c.labelKey))];
     const rows = displayed.map((r) => [r.name, ...COLUMNS.map((c) => c.fmt(r))]);
     const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
     const wb = XLSX.utils.book_new();
@@ -213,12 +215,12 @@ export function AdminDashboard() {
           {seasons.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-              {s.isCurrent ? ' (current)' : ''}
+              {s.isCurrent ? ` (${t('common.current')})` : ''}
             </option>
           ))}
         </Select>
         <Select value={playerFilter} onChange={setPlayerFilter}>
-          <option value="ALL">All players</option>
+          <option value="ALL">{t('admin.allPlayers')}</option>
           {players.map((n) => (
             <option key={n} value={n}>
               {n}
@@ -226,9 +228,9 @@ export function AdminDashboard() {
           ))}
         </Select>
         <Select value={mode} onChange={(v) => setMode(v as typeof mode)}>
-          <option value="ALL">Singles & Doubles</option>
-          <option value="SINGLE">Singles</option>
-          <option value="DOUBLE">Doubles</option>
+          <option value="ALL">{t('admin.singlesAndDoubles')}</option>
+          <option value="SINGLE">{t('game.singles')}</option>
+          <option value="DOUBLE">{t('game.doubles')}</option>
         </Select>
         <Select value={variant} onChange={(v) => setVariant(v as typeof variant)}>
           <option value="ALL">501 & 601</option>
@@ -236,12 +238,12 @@ export function AdminDashboard() {
           <option value="601">601</option>
         </Select>
         <Select value={period} onChange={(v) => setPeriod(v as Period)}>
-          <option value="all">All time</option>
-          <option value="today">Today</option>
-          <option value="week">Last 7 days</option>
-          <option value="month">This month</option>
-          <option value="year">This year</option>
-          <option value="custom">Custom…</option>
+          <option value="all">{t('admin.allTime')}</option>
+          <option value="today">{t('admin.today')}</option>
+          <option value="week">{t('admin.last7')}</option>
+          <option value="month">{t('admin.thisMonth')}</option>
+          <option value="year">{t('admin.thisYear')}</option>
+          <option value="custom">{t('admin.custom')}</option>
         </Select>
         {period === 'custom' && (
           <>
@@ -261,7 +263,9 @@ export function AdminDashboard() {
         )}
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[var(--color-text-dim)]">
-            {matches.length} matches · {rows.length} players
+            {t('admin.counts')
+              .replace('{matches}', String(matches.length))
+              .replace('{players}', String(rows.length))}
           </span>
           <button
             onClick={() => void exportXlsx()}
@@ -274,10 +278,10 @@ export function AdminDashboard() {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-[var(--color-text-dim)]">Loading…</p>
+        <p className="py-8 text-center text-[var(--color-text-dim)]">{t('common.loading')}</p>
       ) : displayed.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center text-[var(--color-text-dim)]">
-          No stats for these filters yet.
+          {t('admin.noStats')}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
@@ -285,7 +289,7 @@ export function AdminDashboard() {
             <thead>
               <tr className="bg-[var(--color-surface-2)]">
                 <th className="sticky left-0 z-10 bg-[var(--color-surface-2)] px-3 py-2 text-left">
-                  Player
+                  {t('stats.row.player')}
                 </th>
                 {COLUMNS.map((c) => (
                   <th
@@ -298,7 +302,7 @@ export function AdminDashboard() {
                         : 'text-[var(--color-text-dim)]',
                     )}
                   >
-                    {c.label}
+                    {t(c.labelKey)}
                     {sortKey === c.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
                   </th>
                 ))}
@@ -334,11 +338,11 @@ export function AdminDashboard() {
       {playerFilter !== 'ALL' && (
         <div className="mt-6">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-            {playerFilter} — match history ({history.length})
+            {playerFilter} — {t('admin.matchHistory')} ({history.length})
           </h3>
           {history.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--color-border)] p-4 text-center text-sm text-[var(--color-text-dim)]">
-              No matches for these filters.
+              {t('admin.noMatchesFilters')}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -361,10 +365,10 @@ export function AdminDashboard() {
                       {h.result}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">vs {h.opponent}</div>
+                      <div className="truncate font-semibold">{t('common.vs')} {h.opponent}</div>
                       <div className="text-xs text-[var(--color-text-dim)]">
                         {h.date ? new Date(h.date).toLocaleDateString() : '—'} ·{' '}
-                        {h.variant} {h.mode === 'DOUBLE' ? 'Doubles' : 'Singles'}
+                        {h.variant} {t(h.mode === 'DOUBLE' ? 'game.doubles' : 'game.singles')}
                       </div>
                     </div>
                     <div className="text-right">
@@ -372,7 +376,7 @@ export function AdminDashboard() {
                         {h.myLegs}–{h.oppLegs}
                       </div>
                       <div className="text-xs text-[var(--color-text-dim)]">
-                        avg {h.avg.toFixed(1)}
+                        {t('game.avg')} {h.avg.toFixed(1)}
                       </div>
                     </div>
                     <span className="text-[var(--color-text-dim)]">›</span>
