@@ -10,7 +10,7 @@ import { createEncounter, persistEncounter } from '@/store/encounterService';
 import type { TeamSnapshot } from '@/domain/championship/types';
 
 function isJedisTeam(team: TeamWithPlayers) {
-  return team.name.trim().toLowerCase().includes('jedis');
+  return /\bjedis?\b/i.test(team.name.trim());
 }
 
 export function EncounterSetup() {
@@ -203,7 +203,7 @@ function TeamPicker({
         {orderedTeams.map((t) => {
           const featured = t.id === featuredId;
           const selected = value === t.id;
-          const subdued =
+          const compact =
             !selected && !!featuredId && (preferFeatured ? !featured : featured);
 
           return (
@@ -212,13 +212,15 @@ function TeamPicker({
               disabled={t.id === exclude}
               onClick={() => onChange(t.id)}
               className={cn(
-                'flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all disabled:opacity-30',
+                'flex items-center justify-between gap-3 border text-left transition-all disabled:opacity-30',
+                compact
+                  ? 'rounded-lg px-3 py-2 text-xs opacity-55'
+                  : 'rounded-xl px-4 py-3 text-sm',
                 selected
                   ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
                   : featured && preferFeatured
                     ? 'border-[var(--color-accent)] bg-[var(--color-surface-2)]'
                     : 'border-[var(--color-border)] bg-[var(--color-surface)]',
-                subdued && 'px-3 py-2 text-sm opacity-60',
               )}
             >
               <span className="flex min-w-0 items-center gap-2">
