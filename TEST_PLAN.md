@@ -1,228 +1,202 @@
-# 🎯 Plan de test complet — DartsScore
-
-Coche au fur et à mesure. **Attendu** = résultat attendu.
-Testez de préférence sur le site en ligne **et** en local (`http://localhost:5173/`).
-
----
-
-## 0. Préparation des données (via Admin)
-
-- [ ] Se connecter à l'admin (voir §2).
-- [ ] Créer **au moins 8 joueurs** (Admin → Players).
-- [ ] Créer **2 équipes** (Admin → Teams) avec **≥ 4 joueurs chacune** (nécessaire pour le championnat).
-
----
-
-## 1. Accueil & navigation
-
-- [ ] L'accueil affiche : **New game**, **🏆 Championship match**, **Admin**.
-- [ ] Aucune carte de reprise si aucune partie/rencontre en cours.
-- [ ] Rafraîchir la page (F5) : l'app se recharge sans erreur.
-
----
-
-## 2. Admin — accès & sécurité
-
-- [ ] Cliquer **Admin** → écran de connexion (email + mot de passe).
-- [ ] Tenter un mauvais mot de passe → **message d'erreur**, pas d'accès.
-- [ ] Se connecter avec les bons identifiants → accès à l'admin.
-- [ ] **Attendu** : les onglets **Players · Teams · Statistics · Championship** apparaissent.
-- [ ] Ouvrir directement l'URL `#/admin/players` sans être connecté → **écran de login** (page protégée).
-- [ ] **Sign out** → retour à l'écran de login.
-
----
-
-## 3. Admin — Joueurs
-
-- [ ] **Ajouter** un joueur (nom) → apparaît dans la liste.
-- [ ] **Modifier** un nom (clic sur le nom, éditer, Entrée) → mis à jour.
-- [ ] **Désactiver** un joueur → passe en « inactive » (grisé).
-- [ ] **Réactiver** → redevient actif.
-- [ ] **Rechercher** un joueur (champ recherche) → la liste filtre.
-- [ ] **Trier** par Nom puis par Date (chips) → l'ordre change (▲/▼).
-- [ ] **Supprimer** un joueur **sans match** → disparaît.
-- [ ] Essayer de supprimer un joueur **ayant joué des matchs** → **bloqué** (désactiver à la place).
-
----
-
-## 4. Admin — Équipes
-
-- [ ] **Créer** une équipe (nom) → apparaît.
-- [ ] **Renommer** une équipe → mis à jour.
-- [ ] **Ouvrir** une équipe (Players) → **ajouter/retirer** des joueurs (les chips deviennent rouges).
-- [ ] **Attendu** : un même joueur peut appartenir à **plusieurs équipes**.
-- [ ] **Rechercher** une équipe → filtre.
-- [ ] **Supprimer** une équipe → disparaît (ses joueurs restent dans Players).
-
----
-
-## 5. Partie normale (X01) — création
-
-- [ ] Accueil → **New game**.
-- [ ] Choisir **501** puis **601** (Type de jeu).
-- [ ] Choisir **Simple (1v1)** puis **Double (2v2)**.
-- [ ] Choisir **Legs to win** (1 à 5).
-- [ ] Sélectionner les joueurs (Simple : 2 ; Double : 2 par équipe).
-- [ ] **Attendu** : seuls les joueurs **actifs** sont proposés.
-- [ ] Départ **Pick manually** → choisir qui commence.
-- [ ] Départ **Bull-up** → bouton « Continue — bull-up » → modal « Qui a gagné le bull ? » → choisir.
-- [ ] **Attendu** : le starter alterne automatiquement à chaque manche.
-- [ ] **Démarrer** → écran de jeu.
-
----
-
-## 6. Partie normale — saisie & scoring
-
-- [ ] **Décrément dynamique** : taper un score (ex. 20) → le score central passe à (reste − 20) en direct.
-- [ ] **Clavier** : ordre **1 en haut, 9 en bas**.
-- [ ] **VALIDATE** (ou ✓) : valide le score joué → tour au joueur suivant.
-- [ ] **Toucher le score central** : le nombre tapé devient le **score restant** (visite = avant − tapé) et est **enregistré dans l'historique**.
-- [ ] **Scores rapides** (26/41/45/59 · 60/81/99/100 · 140/180) : validation immédiate.
-- [ ] **Nombre de fléchettes** affiché par joueur (« X darts »).
-- [ ] **Erreurs de saisie** (message clair, pas d'enregistrement) :
-  - [ ] score **> 180** → « Score must be between 0 and 180 ».
-  - [ ] score **> reste** → « Score is higher than what's left ».
-  - [ ] laisse **1** → « Cannot leave 1 ».
-  - [ ] checkout impossible (ex. rester sur 169) → refusé.
-- [ ] **BUST** : visible seulement si reste **≤ 180**, disparaît si > 180. Clic → 0 point, tour suivant, log « BUST ».
-- [ ] **En finish** (reste ≤ 170 checkoutable) : les touches **1/2/3 deviennent vertes**.
-  - [ ] **Appui long** sur 1/2/3 → termine la manche avec ce nb de fléchettes.
-  - [ ] Cases impossibles grisées (ex. 102 → seul 3 possible).
-  - [ ] Bouton **Miss** apparaît → 0 point, pas de bust, tour suivant.
-- [ ] **Historique** (façon DartConnect) sous le score : par joueur, score / reste / fléchettes.
-  - [ ] Cliquer une visite → **modifier** le score → recalcul immédiat.
-  - [ ] Cliquer une visite → **supprimer** → recalcul immédiat (les tours se décalent).
-- [ ] **↩ Undo** : annule la dernière action.
-- [ ] **Abandon manche** (Forfeit leg) → confirmation → la manche va à l'adversaire.
-- [ ] **Abandon partie** (Forfeit match) → confirmation → fin immédiate, vainqueur déclaré.
-
----
-
-## 7. Partie normale — fin de manche / partie
-
-- [ ] Faire un **checkout** (reste = 0) → modal « How many darts? » (cases impossibles grisées).
-- [ ] Valider → **manche gagnée**, score des manches incrémenté, nouvelle manche (starter alterné).
-- [ ] Gagner le nombre de manches requis → **écran final** : confettis, vainqueur, **tableau de stats comparatif** (moyenne 3D, First 9, 180/140+/100+, busts, meilleure/pire manche…).
-- [ ] **New game** → retour au flux.
-
----
-
-## 8. Sauvegarde auto & reprise (partie normale)
-
-- [ ] Pendant une partie, **rafraîchir** la page → l'accueil propose « **Game in progress** » → **Resume** → la partie reprend au bon état.
-- [ ] Marquer quelques visites, **fermer l'onglet**, rouvrir → reprise possible.
-- [ ] **Changement d'appareil** : sur un **autre navigateur/appareil connecté à la même base**, la partie en cours apparaît en reprise (données cloud).
-- [ ] (Résilience) Couper le réseau, marquer un score, le rétablir → pas de perte (cache local + resync).
-
----
-
-## 9. Dashboard stats (Admin → Statistics)
-
-Jouer **au moins 2 parties complètes** avant.
-
-- [ ] Le tableau liste les joueurs avec toutes les stats (P, W, Win%, moyenne 3D, First 9/3, CO%, Avg/Best CO, 180/140+/100+/60+, busts, meilleure visite, meilleure manche, total fléchettes).
-- [ ] **Trier** en cliquant une colonne (▲/▼).
-- [ ] **Filtres** : Saison · Joueur · Simple/Double · 501/601 · Période (Today / 7 days / month / year / **Custom** avec dates).
-- [ ] Sélectionner **un joueur** → apparaît « **{joueur} — match history** » : liste de ses matchs (W/L, adversaire, date, score, moyenne).
-- [ ] Cliquer un match → **détail complet** : résumé, stats par joueur, **déroulé leg par leg** (score/reste/fléchettes).
-- [ ] **Attendu** : les matchs de **championnat n'apparaissent PAS** dans ce dashboard normal.
-
----
-
-## 10. Championnat — création & composition
-
-Pré-requis : 2 équipes de ≥ 4 joueurs.
-
-- [ ] Accueil → **🏆 Championship match** (demande le login si pas connecté).
-- [ ] Choisir **Team A** et **Team B** (différentes, ≥ 4 joueurs).
-- [ ] **Continue — Compose first singles**.
-- [ ] Écran **Compose the first singles** : 4 simples, un joueur par équipe (valeurs par défaut préremplies, modifiables).
-- [ ] **Attendu** : le **score de rencontre** est visible en haut (A x · MATCH n/10 · B y).
-
----
-
-## 11. Championnat — pré-match (bull + ordre)
-
-- [ ] **Start encounter** → écran **Bull-up** (avant le match 1).
-- [ ] Choisir qui a gagné le bull (2 boutons) → **Start match**.
-- [ ] **Attendu** : dans le match, le joueur choisi **commence** (« … to throw · Leg 1 · … starts »).
-- [ ] (Aux doubles) l'écran Bull-up affiche aussi **Throwing order** avec **↕ Swap** par équipe.
-- [ ] **Attendu** : l'ordre choisi est **conservé pour tout le match** (alternance des 2 joueurs dans cet ordre).
-
----
-
-## 12. Championnat — déroulement automatique
-
-- [ ] Le **match 1 démarre** automatiquement (moteur de scoring normal, embarqué sous le score de rencontre).
-- [ ] Terminer le match (jouer OU **Forfeit match**) → **écran de stats du match** (vainqueur, legs, table de stats tous joueurs).
-- [ ] Le **score de rencontre se met à jour**.
-- [ ] Bouton **▶ Match suivant** → pré-match du match 2 (bull), etc.
-- [ ] Après les 4 simples → **Compose the doubles** (2 doubles, par défaut A1/A2 vs B1/B2, A3/A4 vs B3/B4).
-- [ ] Après les 2 doubles → **Compose the last singles** (4 simples).
-- [ ] **Attendu** : enchaînement **fluide**, aucune création manuelle de match.
-
----
-
-## 13. Championnat — configurer la rencontre (à tout moment)
-
-- [ ] Cliquer **⚙ Configure** (dans le bandeau de score).
-- [ ] Modifier **Legs to win**, **Starts** (équipe qui commence), **Start mode** (Bull/Fixed/Alternate).
-- [ ] Modifier les **joueurs** d'un match **non encore lancé**.
-- [ ] **Réordonner** des matchs non joués (▲/▼).
-- [ ] **Attendu** : les matchs **déjà joués / en cours** sont **verrouillés** (🔒, non modifiables).
-- [ ] **Save** → sauvegarde immédiate ; les changements s'appliquent aux matchs suivants.
-
----
-
-## 14. Championnat — écran final
-
-- [ ] Terminer les **10 matchs** → **écran final** avec confettis.
-- [ ] Affiche : **vainqueur**, score final, **stats d'équipe** (moyenne…), **records** (MVP, meilleur checkout, meilleur First 9, plus de 180), **stats individuelles** de chaque joueur.
-- [ ] **Finish encounter** → retour à l'accueil.
-
----
-
-## 15. Championnat — reprise
-
-- [ ] En pleine rencontre (ex. match 3), **rafraîchir** / fermer → l'accueil affiche « **🏆 Championship in progress** » → **Resume**.
-- [ ] **Attendu** : reprise **exactement** au bon match/score/phase.
-- [ ] Reprise possible depuis un **autre appareil connecté**.
-
----
-
-## 16. Admin — stats championnat (détail match/leg, forfait)
-
-- [ ] Admin → **Championship** : liste des rencontres (statut Final/Live, score, vainqueur, date).
-- [ ] Ouvrir une rencontre → **liste des 10 matchs** (Single/Double #, joueurs, vainqueur, legs, tag **forfeit** si applicable).
-- [ ] Cliquer un match → **détail leg par leg** (comme le scoring normal).
-- [ ] Cliquer un match **forfait** → détail s'ouvre sans erreur, affiche « **… won (forfeit)** ».
-- [ ] **← Encounters** pour revenir.
-
----
-
-## 17. Responsive
-
-- [ ] **Mobile** (portrait) : historique visible **sous le score**, clavier en bas, rien de tronqué, boutons tactiles.
-- [ ] **Tablette** (paysage) : mise en page **2 colonnes** (scores/historique à gauche, clavier à droite).
-- [ ] Aucune zone ne nécessite de zoom.
-
----
-
-## 18. Sécurité / permissions (RLS)
-
-- [ ] **Sans être connecté** (anonyme) : on peut **créer et scorer une partie normale** (X01).
-- [ ] **Sans être connecté** : impossible d'accéder à **gérer joueurs/équipes** ou au **dashboard** (login requis).
-- [ ] **Sans être connecté** : impossible de créer/scorer un **match de championnat** (login requis).
-- [ ] Seul l'**admin** peut **supprimer** des matchs.
-
----
-
-## 19. Non-régression (rappel)
-
-- [ ] Après avoir touché au championnat : les **parties normales** (simples/doubles, stats, reprise) fonctionnent **toujours** à l'identique.
-- [ ] L'admin (joueurs/dashboard) fonctionne toujours.
-
----
-
-### En cas de bug
-Note : l'action faite, le **résultat attendu**, le **résultat obtenu**, l'écran (mobile/tablette), et si possible une capture. Je corrige ensuite.
+# Plan de test manuel - GenevaDartsConnect
+
+Ce plan sert a verifier rapidement les parcours critiques apres une modification.
+Tester de preference en local et sur le site deploye.
+
+## 0. Preparation
+
+- [ ] Installer les dependances: `npm install`.
+- [ ] Lancer les tests unitaires: `npm test`.
+- [ ] Lancer le build: `npm run build`.
+- [ ] Demarrer l'app: `npm run dev`.
+- [ ] En mode cloud, verifier que `.env.local` contient `VITE_SUPABASE_URL` et
+      `VITE_SUPABASE_ANON_KEY`.
+
+Donnees recommandees:
+
+- [ ] au moins 8 joueurs actifs;
+- [ ] une equipe `Jedis` avec au moins 4 joueurs;
+- [ ] une autre equipe avec au moins 4 joueurs;
+- [ ] une saison courante.
+
+## 1. Accueil
+
+- [ ] Le logo GenevaDartsConnect s'affiche.
+- [ ] Le favicon est visible dans l'onglet navigateur.
+- [ ] Le switch FR/EN change les textes visibles.
+- [ ] Les boutons principaux sont visibles:
+  - Nouvelle partie d'entrainement;
+  - Match de championnat;
+  - En direct;
+  - Statistiques.
+- [ ] Le QR code "Scan to watch" pointe vers `#/live`.
+- [ ] Le bouton discret des regles droles ouvre puis ferme le popup.
+- [ ] Si aucun match n'est en cours, aucune carte de reprise n'apparait.
+
+## 2. Nouvelle partie d'entrainement
+
+- [ ] Ouvrir `#/new`.
+- [ ] Choisir 501 puis 601.
+- [ ] Choisir simple puis double.
+- [ ] Modifier le nombre de legs a gagner.
+- [ ] Ajouter les joueurs via la recherche instantanee.
+- [ ] En simple, l'app demande un joueur par cote.
+- [ ] En double, l'app demande deux joueurs par cote.
+- [ ] Choisir le starter manuellement.
+- [ ] Choisir le bull-up et verifier le popup de selection du gagnant.
+- [ ] Demarrer le match.
+
+## 3. Scoring match
+
+- [ ] Saisir un score valide puis valider.
+- [ ] Les scores restants, le joueur actif et l'historique se mettent a jour.
+- [ ] Les scores rapides valident immediatement.
+- [ ] Le bouton Bust apparait seulement quand il est pertinent.
+- [ ] Les finishes proposent les choix de flechettes possibles.
+- [ ] Un checkout termine le leg.
+- [ ] Le starter alterne au leg suivant.
+- [ ] Gagner le nombre de legs requis affiche l'ecran final.
+- [ ] Undo annule la derniere action.
+- [ ] Une visite peut etre modifiee si l'UI le permet.
+- [ ] La suppression de visite n'est pas disponible pendant un match.
+- [ ] Forfeit leg demande confirmation et attribue le leg a l'adversaire.
+- [ ] Forfeit match demande confirmation et termine le match.
+
+## 4. Sauvegarde et reprise
+
+- [ ] Pendant un match, rafraichir la page.
+- [ ] L'accueil affiche une carte "partie en cours".
+- [ ] Resume reprend exactement le bon score, leg et joueur actif.
+- [ ] En mode cloud, verifier la reprise depuis un autre navigateur/appareil.
+- [ ] En cas de perte reseau temporaire, verifier qu'aucune saisie n'est perdue
+      apres reconnexion.
+
+## 5. Live public
+
+- [ ] Ouvrir `#/live` sans etre connecte.
+- [ ] Les matchs en cours sont listables.
+- [ ] Ouvrir un match live.
+- [ ] Le live n'affiche aucun controle de scoring.
+- [ ] Depuis un autre onglet, scorer une visite et verifier la mise a jour live.
+- [ ] Terminer le match et verifier que le recap final reste lisible.
+
+## 6. Statistiques / admin
+
+- [ ] Ouvrir `#/admin`.
+- [ ] Sans session, l'ecran de login apparait.
+- [ ] Un mauvais mot de passe n'ouvre pas l'admin.
+- [ ] Une connexion valide donne acces aux sections admin.
+- [ ] Sign out ferme la session admin.
+
+## 7. Admin joueurs
+
+- [ ] Ajouter un joueur.
+- [ ] Renommer un joueur.
+- [ ] Desactiver puis reactiver un joueur.
+- [ ] Rechercher un joueur.
+- [ ] Trier la liste si le controle est disponible.
+- [ ] Supprimer un joueur sans match.
+- [ ] Verifier qu'un joueur avec historique ne peut pas etre supprime si la
+      base bloque l'operation; utiliser la desactivation a la place.
+
+## 8. Admin equipes
+
+- [ ] Creer une equipe.
+- [ ] Renommer une equipe.
+- [ ] Ouvrir le dialogue d'ajout joueur.
+- [ ] Rechercher un joueur dans le dialogue.
+- [ ] Selectionner un joueur et verifier l'ajout immediat.
+- [ ] Retirer un joueur de l'equipe.
+- [ ] Verifier qu'un joueur deja dans une equipe n'est pas propose comme membre
+      disponible d'une autre equipe.
+- [ ] Rechercher une equipe.
+- [ ] Supprimer une equipe et verifier que les joueurs restent disponibles.
+
+## 9. Match de championnat
+
+- [ ] Ouvrir `#/championship/new`.
+- [ ] Sans session admin, verifier la redirection login.
+- [ ] Apres login, verifier que l'equipe Jedis est preselectionnee a domicile.
+- [ ] Verifier que les autres equipes restent selectionnables.
+- [ ] Verifier que les autres equipes sont affichees plus discretement.
+- [ ] Choisir l'equipe adverse.
+- [ ] Demarrer la composition des premiers simples.
+- [ ] Les equipes doivent etre differentes.
+- [ ] Chaque equipe doit avoir au moins 4 joueurs.
+
+## 10. Composition championnat
+
+- [ ] Composer les 4 premiers simples.
+- [ ] Demarrer le match 1.
+- [ ] Faire le bull-up.
+- [ ] Verifier que le gagnant du bull commence.
+- [ ] Terminer un match.
+- [ ] Verifier que le score de rencontre augmente.
+- [ ] Passer au match suivant.
+- [ ] Apres 4 simples, composer les 2 doubles.
+- [ ] Apres les doubles, composer les 4 derniers simples.
+- [ ] Les matchs deja joues ne doivent pas etre modifies par la configuration.
+
+## 11. Championnat final et admin championnat
+
+- [ ] Terminer les 10 matchs.
+- [ ] L'ecran final affiche le vainqueur, le score et les stats.
+- [ ] Finish encounter revient a l'accueil.
+- [ ] Ouvrir `#/admin/championship`.
+- [ ] La rencontre apparait dans la liste.
+- [ ] Ouvrir la rencontre.
+- [ ] Ouvrir le detail d'un match.
+- [ ] Les forfaits s'affichent sans erreur si un match a ete termine par forfait.
+
+## 12. Dashboard statistiques
+
+- [ ] Ouvrir `#/admin/stats`.
+- [ ] Verifier les filtres: saison, joueur, type, variante, periode.
+- [ ] Trier plusieurs colonnes.
+- [ ] Selectionner un joueur et verifier son historique.
+- [ ] Ouvrir le detail d'un match.
+- [ ] Exporter en CSV.
+- [ ] Ouvrir le CSV dans un tableur et verifier les colonnes.
+- [ ] Les donnees potentiellement interpretees comme formules doivent etre
+      neutralisees dans l'export.
+
+## 13. Responsive
+
+- [ ] Mobile portrait: scoring utilisable sans zoom.
+- [ ] Tablette paysage: score et clavier restent lisibles.
+- [ ] Les textes des boutons ne debordent pas.
+- [ ] Les popups restent accessibles sur petit ecran.
+- [ ] Le logo d'accueil ne masque pas les boutons principaux.
+
+## 14. Securite
+
+- [ ] Les routes admin demandent une session.
+- [ ] Les routes championnat demandent une session.
+- [ ] Le live reste public et sans controle d'ecriture.
+- [ ] La cle `service_role` Supabase n'est jamais presente dans le frontend.
+- [ ] `npm audit --json` ne remonte aucune vulnerabilite connue.
+- [ ] Les nouveaux fichiers ne contiennent pas de token ou secret.
+
+## 15. Non-regression ciblee
+
+Apres une modification dans une zone, verifier au minimum:
+
+- UI accueil: sections 1 et 13;
+- setup/scoring: sections 2, 3 et 4;
+- live: section 5;
+- admin joueurs/equipes: sections 6, 7 et 8;
+- championnat: sections 9, 10 et 11;
+- stats/export: section 12;
+- securite/config: sections 6 et 14.
+
+## Rapport de bug
+
+Noter:
+
+- l'environnement: local ou prod;
+- le navigateur/appareil;
+- les donnees utilisees;
+- l'action faite;
+- le resultat attendu;
+- le resultat obtenu;
+- une capture si possible.

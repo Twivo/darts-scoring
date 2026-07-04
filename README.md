@@ -1,73 +1,246 @@
-# 🎯 DartsScore — Darts competition platform (501 / 601 Double Out)
+# GenevaDartsConnect
 
-Touch-first darts scoring app that grew from a local scorer into a small
-competition platform: an event-sourced scoring engine, an admin area to manage
-players, multi-season persistent statistics, and matches auto-saved to the
-cloud so no game is ever lost.
+GenevaDartsConnect est une application de scoring de darts pensée d'abord pour
+les matchs a domicile des Jedis, puis etendue vers une petite plateforme de
+club: matchs d'entrainement, rencontres de championnat, statistiques joueurs,
+equipes, live public et mode PWA.
 
-Every stat (remaining score, averages, legs, checkouts…) is **recomputed** from
-the event log by a pure engine — nothing derived is ever stored.
+Le coeur du projet est volontairement simple: un match stocke une configuration
+et une liste d'evenements. Les scores, legs, moyennes, checkouts et statistiques
+sont recalcules par le moteur TypeScript pur a partir de ces evenements.
+
+## Fonctionnalites
+
+- Scoring X01 en 501 ou 601, sortie double.
+- Matchs simples et doubles.
+- Mode entrainement public et rapide, utilisable sans connexion.
+- Mode championnat protege par connexion admin.
+- Rencontre de championnat par equipes: 4 simples, 2 doubles, 4 simples.
+- Preselection de l'equipe Jedis a domicile, avec choix manuel toujours possible.
+- Sauvegarde et reprise des matchs en cours.
+- Live public en lecture seule, avec QR code depuis l'accueil.
+- Mode TV club pour afficher les matchs en direct.
+- Gestion admin des joueurs, equipes, saisons et resultats.
+- Statistiques joueurs et championnat, avec export CSV.
+- Interface FR/EN via un dictionnaire local.
+- PWA installable avec favicon et icones dedies.
+
+## Modes de donnees
+
+L'application peut tourner dans deux modes.
+
+### Mode local
+
+Si aucune variable Supabase n'est configuree, l'application utilise le stockage
+local du navigateur. C'est pratique pour tester, developper ou faire une demo
+hors ligne.
+
+### Mode cloud
+
+Si `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` sont definies, l'application
+utilise Supabase pour les joueurs, equipes, saisons, matchs et rencontres.
+
+La cle anon Supabase est publique par nature. La protection repose sur les
+policies RLS cote base de donnees:
+
+- lecture publique des donnees utiles au live et aux stats;
+- creation/scoring d'un match d'entrainement possible sans compte;
+- suppression de match reservee a l'admin;
+- joueurs, equipes, saisons, stats admin et championnat reserves a l'admin;
+- rencontres de championnat et matchs lies a une rencontre reserves a l'admin.
 
 ## Stack
 
-React 18 · TypeScript (strict) · Vite 6 · TailwindCSS 4 · React Router 6 ·
-Supabase (Postgres + Auth + RLS) · Vitest.
+- React 18
+- TypeScript
+- Vite 6
+- TailwindCSS 4
+- React Router 6 en `HashRouter`
+- Supabase: Postgres, Auth, RLS, Realtime
+- Vitest
+- vite-plugin-pwa
 
-- **Local-only mode**: with no backend configured, the app runs entirely on
-  LocalStorage (offline).
-- **Cloud mode**: set the two `VITE_SUPABASE_*` env vars and it uses Supabase
-  for players, seasons, matches and stats.
-
-## Getting started
+## Demarrage
 
 ```bash
 npm install
-npm run dev      # dev server (http://localhost:5173)
-npm run build    # production build (tsc + vite)
-npm test         # unit tests (engine, rules, stats)
+npm run dev
+npm test
+npm run build
 ```
 
-### Cloud backend (optional)
+Commandes utiles:
 
-1. Create a Supabase project and run the SQL in
-   [`supabase/migrations/`](supabase/migrations) (see
-   [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)).
-2. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and
-   `VITE_SUPABASE_ANON_KEY` (the anon key is public by design — Row-Level
-   Security protects all writes).
+```bash
+npm run dev        # serveur local Vite
+npm run build      # verification TypeScript + build production
+npm test           # tests unitaires du domaine
+npm run preview    # preview du build
+```
+
+## Configuration Supabase
+
+Le backend cloud est optionnel. Pour l'activer:
+
+1. Creer un projet Supabase.
+2. Executer les migrations SQL dans `supabase/migrations/`, dans l'ordre.
+3. Creer un utilisateur admin dans Supabase Auth.
+4. Copier `.env.example` vers `.env.local`.
+5. Renseigner:
+
+```bash
+VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR-ANON-PUBLIC-KEY
+```
+
+Voir [SUPABASE_SETUP.md](SUPABASE_SETUP.md) pour le detail.
+
+## Documentation utilisateur
+
+- [MODE_D_EMPLOI.md](MODE_D_EMPLOI.md): guide d'utilisation pour lancer un
+  match, scorer, suivre le live, gerer le championnat et consulter les stats.
+- [TEST_PLAN.md](TEST_PLAN.md): checklist de verification manuelle.
+- [SUPABASE_SETUP.md](SUPABASE_SETUP.md): configuration du backend cloud.
+
+## Parcours principaux
+
+### Nouvelle partie d'entrainement
+
+Route: `#/new`
+
+Le joueur choisit le type de partie, les participants, le nombre de legs et le
+starter. Le match est sauvegarde automatiquement et peut etre repris depuis
+l'accueil.
+
+### Match de championnat
+
+Route: `#/championship/new`
+
+Ce parcours demande une connexion admin. Les Jedis sont selectionnes par defaut
+comme equipe a domicile, mais l'utilisateur peut choisir une autre equipe si un
+match exceptionnel l'exige. Une rencontre contient 10 matchs: 4 simples, 2
+doubles, puis 4 simples.
+
+### Live
+
+Route: `#/live`
+
+Le live est public et en lecture seule. Il permet de suivre les matchs en cours
+depuis un telephone, une tablette ou le QR code affiche sur l'accueil.
+
+### Statistiques
+
+Route: `#/admin/stats`
+
+La zone statistiques est protegee par login admin. Elle affiche les stats
+championnat, les profils joueurs, l'historique des matchs et un export CSV
+securise contre l'injection de formules tableur.
 
 ## Architecture
 
-```
+```text
 src/
-├── domain/     Pure engine, rules, stats (no React, no I/O) + tests
-├── domain/championship/  Team-encounter state machine (pure) + tests
-├── data/       Repository + Auth interfaces, Supabase & Local implementations
-├── store/      React state (game, roster, auth) + resilient match/encounter persistence
-├── features/   UI by area: home · setup · game · championship · admin
-└── components/ Shared UI
-supabase/migrations/   Versioned SQL (schema, RLS, seasons, teams, encounters)
+  App.tsx                     Routes principales
+  main.tsx                    Bootstrap React, providers, HashRouter
+  components/                 Composants partages
+  components/ui/              UI generique: Button, Modal, ConfirmProvider
+  data/                       Contrats repository/auth + backends local/Supabase
+  domain/                     Moteur pur: scoring, validation, stats
+  domain/championship/        Moteur pur des rencontres par equipes
+  features/                   Ecrans par domaine fonctionnel
+    admin/                    Joueurs, equipes, stats, championnat admin
+    championship/             Creation et deroulement des rencontres
+    game/                     Scoring en cours
+    home/                     Accueil
+    live/                     Watch live
+    setup/                    Nouvelle partie d'entrainement
+    stats/                    Ecran de fin de match
+  hooks/                      Hooks React reutilisables
+  lib/                        Helpers transverses
+  store/                      Contextes, persistence et orchestration UI
+supabase/
+  migrations/                 Schema, RLS, realtime, championnat
+  seed_gdl_2025-2026.sql      Donnees optionnelles de depart
+public/
+  app-icon.png                Icone PWA
+  favicon.png                 Favicon
+  home-logo.png               Logo d'accueil
 ```
 
-- **Event-sourced**: a match persists only `{ config, events }`; the engine
-  rebuilds everything. Stats reuse the same engine — zero duplication.
-- **Swappable backend**: features depend on `DartsRepository` / `AuthProvider`
-  interfaces, never a concrete backend.
-- **Championship mode**: a team tie (4 singles, 2 doubles, 4 singles). Each
-  fixture is a normal match tagged with `encounter_id`, so it reuses the whole
-  engine yet keeps its stats separate. Login-gated, auto-saved, resumable.
-- **Security**: public read; player/season/team writes require the admin
-  account; regular matches can be scored anonymously but only the admin can
-  delete them; championship writes require login (RLS).
+## Modeles importants
 
-## Deployment (GitHub Pages)
+- `GameConfig`: configuration initiale d'un match.
+- `GameEvent`: evenement ajoute au journal du match.
+- `MatchRecord`: match persiste avec `config`, `events`, statut et metadata.
+- `TeamRecord` / `TeamWithPlayers`: equipes de championnat.
+- `EncounterRecord`: rencontre de championnat complete.
+- `DartsRepository`: interface commune aux backends local et Supabase.
 
-`.github/workflows/deploy.yml` builds and deploys on every push to `main`.
-For cloud mode, add two repository secrets
-(**Settings → Secrets and variables → Actions**):
+Principe cle: les composants UI ne doivent pas reimplementer les regles de
+darts. Les regles restent dans `src/domain`, puis l'UI consomme le resultat.
+
+## Securite
+
+Elements deja en place:
+
+- Row-Level Security Supabase.
+- Auth admin pour les zones sensibles.
+- Live public en lecture seule.
+- CSP dans `index.html`.
+- Pas de secret requis dans le code source.
+- Export CSV neutralisant les cellules pouvant etre interpretees comme formules.
+- Verrou de scoring par appareil pour limiter les reprises concurrentes.
+
+Points a garder en tete:
+
+- Le mode entrainement est volontairement simple et publiquement scorables.
+- Les donnees sensibles ne doivent jamais etre ajoutees dans `.env.example`,
+  `README.md`, `agent.md` ou les migrations.
+- Toute nouvelle table Supabase doit etre creee avec RLS et policies explicites.
+
+## Tests et verification
+
+Tests unitaires actuels:
+
+- moteur de scoring;
+- validation des scores;
+- checkouts;
+- statistiques joueurs;
+- moteur championnat.
+
+Avant une modification metier:
+
+```bash
+npm test
+npm run build
+```
+
+Avant une modification UI simple:
+
+```bash
+npm run build
+```
+
+Pour une verification manuelle complete, voir [TEST_PLAN.md](TEST_PLAN.md).
+
+## Deploiement GitHub Pages
+
+Le workflow GitHub Actions construit l'application a chaque push sur `main`.
+
+Pour le mode cloud en production, ajouter ces secrets ou variables dans le depot
+GitHub:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
-Routing uses `HashRouter`, so it works under any Pages path with no server
-rewrites.
+Le routage utilise `HashRouter`, donc l'application fonctionne sous un chemin de
+projet GitHub Pages sans configuration serveur supplementaire.
+
+## Conseils de contribution
+
+- Faire des changements scopes et comprehensibles.
+- Ne pas casser la compatibilite des donnees deja stockees.
+- Ajouter les textes visibles dans `src/store/LangContext.tsx`.
+- Garder le moteur de scoring independant de React.
+- Eviter les refactors globaux sans objectif clair.
+- Lire [agent.md](agent.md) avant de travailler avec un assistant IA.
