@@ -114,6 +114,12 @@ export function ChampionshipRoute() {
             encounter={encounter}
             fixture={state.currentFixture}
             isLast={state.currentIndex + 1 >= state.total}
+            // A level score (5-5) after the last regular match sends us to the
+            // decisive doubles, not the final screen.
+            toDecider={
+              state.currentIndex + 1 >= state.total &&
+              state.scoreA === state.scoreB
+            }
             onNext={() => void advanceEncounter(encounter).then(setEncounter)}
             onBack={async () => {
               const f = state.currentFixture!;

@@ -357,6 +357,10 @@ const DICT: Record<string, { en: string; fr: string }> = {
   'champ.loadingResult': { en: 'Loading result…', fr: 'Chargement du résultat…' },
   'champ.result': { en: 'result', fr: 'résultat' },
   'champ.seeFinal': { en: 'See final result ▶', fr: 'Voir le résultat final ▶' },
+  'champ.continueToDecider': {
+    en: 'Continue to decisive doubles ▶',
+    fr: 'Continuer vers le double décisif ▶',
+  },
   'champ.nextMatch': { en: '▶ Next match', fr: '▶ Match suivant' },
   'champ.finishEncounter': { en: 'Finish encounter', fr: 'Terminer la rencontre' },
   'champ.matchFinishedSaving': { en: 'Match finished — saving…', fr: 'Match terminé — enregistrement…' },
