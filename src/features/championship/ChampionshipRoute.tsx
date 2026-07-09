@@ -15,6 +15,7 @@ import type { Side } from '@/domain/championship/types';
 import { EncounterHeader } from './EncounterHeader';
 import { EncounterConfig } from './EncounterConfig';
 import { FixtureComposer } from './FixtureComposer';
+import { DeciderComposer } from './DeciderComposer';
 import { EncounterPlay } from './EncounterPlay';
 import { MatchStatsScreen } from './MatchStatsScreen';
 import { EncounterFinal } from './EncounterFinal';
@@ -76,7 +77,11 @@ export function ChampionshipRoute() {
       />
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {state.phase === 'COMPOSE' && state.composeBlock && (
+        {state.phase === 'COMPOSE' && state.isDecider && (
+          <DeciderComposer encounter={encounter} onComposed={setEncounter} />
+        )}
+
+        {state.phase === 'COMPOSE' && !state.isDecider && state.composeBlock && (
           <FixtureComposer
             encounter={encounter}
             block={state.composeBlock}
