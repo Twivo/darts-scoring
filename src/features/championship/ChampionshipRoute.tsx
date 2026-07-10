@@ -15,7 +15,6 @@ import type { Side } from '@/domain/championship/types';
 import { EncounterHeader } from './EncounterHeader';
 import { EncounterConfig } from './EncounterConfig';
 import { FixtureComposer } from './FixtureComposer';
-import { DeciderComposer } from './DeciderComposer';
 import { EncounterPlay } from './EncounterPlay';
 import { MatchStatsScreen } from './MatchStatsScreen';
 import { EncounterFinal } from './EncounterFinal';
@@ -77,11 +76,7 @@ export function ChampionshipRoute() {
       />
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {state.phase === 'COMPOSE' && state.isDecider && (
-          <DeciderComposer encounter={encounter} onComposed={setEncounter} />
-        )}
-
-        {state.phase === 'COMPOSE' && !state.isDecider && state.composeBlock && (
+        {state.phase === 'COMPOSE' && state.composeBlock && (
           <FixtureComposer
             encounter={encounter}
             block={state.composeBlock}
@@ -114,12 +109,6 @@ export function ChampionshipRoute() {
             encounter={encounter}
             fixture={state.currentFixture}
             isLast={state.currentIndex + 1 >= state.total}
-            // A level score (5-5) after the last regular match sends us to the
-            // decisive doubles, not the final screen.
-            toDecider={
-              state.currentIndex + 1 >= state.total &&
-              state.scoreA === state.scoreB
-            }
             onNext={() => void advanceEncounter(encounter).then(setEncounter)}
             onBack={async () => {
               const f = state.currentFixture!;

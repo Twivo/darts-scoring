@@ -42,7 +42,11 @@ export function EncounterFinal({
     teams.A.players.some((p) => p.id === id) ? 'A' : 'B';
 
   const winnerName =
-    encounter.winner === 'B' ? teams.B.name : teams.A.name;
+    encounter.winner === 'A'
+      ? teams.A.name
+      : encounter.winner === 'B'
+        ? teams.B.name
+        : t('champ.draw');
 
   const best = (pick: (s: PlayerSeasonStats) => number) =>
     stats.reduce<PlayerSeasonStats | null>(

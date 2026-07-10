@@ -3,10 +3,6 @@ import { GameProvider } from '@/store/GameContext';
 import { GameScreen } from '@/features/game/GameScreen';
 import { launchFixture, persistEncounter } from '@/store/encounterService';
 import { loadMatch } from '@/store/matchService';
-import {
-  getFixtureOrDecider,
-  withFixtureLineup,
-} from '@/domain/championship/encounter';
 import { useT } from '@/store/LangContext';
 import type { EncounterRecord, MatchRecord } from '@/data/types';
 import type { Fixture, Side } from '@/domain/championship/types';
@@ -50,20 +46,25 @@ export function EncounterPlay({
     bOrder: string[];
     starter: Side;
   }) => {
-    // Persist the chosen order + bull winner on the fixture (or the decider),
-    // then launch its match.
-    const plan = withFixtureLineup(
-      encounter.plan,
-      fixture.index,
-      v.aOrder,
-      v.bOrder,
-      v.starter,
-    );
+    // Persist the chosen order + bull winner on the fixture, then launch.
+    const plan = {
+      ...encounter.plan,
+      fixtures: encounter.plan.fixtures.map((f) =>
+        f.index === fixture.index
+          ? {
+              ...f,
+              aPlayerIds: v.aOrder,
+              bPlayerIds: v.bOrder,
+              starterSide: v.starter,
+            }
+          : f,
+      ),
+    };
     const enc = { ...encounter, plan };
     await persistEncounter(enc);
     const launched = await launchFixture(
       enc,
-      getFixtureOrDecider(plan, fixture.index)!,
+      plan.fixtures.find((f) => f.index === fixture.index)!,
     );
     onEncounterUpdate(launched.encounter);
     const m = await loadMatch(launched.matchId);
